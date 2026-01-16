@@ -13,7 +13,7 @@ import requests
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import utils
 
-# 配置文件初始化
+# Configuration initialization
 
 
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -57,7 +57,7 @@ sched1 = AsyncIOScheduler(timezone="Asia/Shanghai")
 app = Flask(__name__)
 CORS(app)
 
-# 文件夹初始化
+# Directory initialization
 if os.path.exists(os.path.join(project_root, "song_output")):
     shutil.rmtree(os.path.join(project_root, "song_output"))
 if os.path.exists(os.path.join(project_root, "logs/danmu")):
@@ -70,55 +70,55 @@ def information_show():
     DANMU_response = request.json
     user_name = DANMU_response["audience_name"]
     content = DANMU_response["DANMU_MSG"]
-    QuestionName.put(user_name)  # 将用户名放入队列
-    QuestionList.put(content)  # 将弹幕消息放入队列
+    QuestionName.put(user_name)  # Store username in queue
+    QuestionList.put(content)  # Store chat message in queue
     time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    LogsList.put(f"[{time1}] [{user_name}]：{content}")
-    print(f"\033[35m[{time1}] [{user_name}]：{content}\033[0m")
-    print("\033[32mSystem>>\033[0m已将该条弹幕添加入问题队列")
+    LogsList.put(f"[{time1}] [{user_name}]: {content}")
+    print(f"\033[35m[{time1}] [{user_name}]: {content}\033[0m")
+    print("\033[32mSystem>>\033[0mAdded the chat message to the question queue.")
     return {"statue_code":200}
 
 def Classifiers(content):
     """
-    分类器:会根据弹幕的内容进行不同功能的使用
-    #聊天:返回值为-1，表示为聊天任务
-    #画画:返回值为1，表示为正常的功能调用，后面跟上提示词，对接sd-api
-    #点歌:返回值为1，表示为正常的功能调用，拥有#点歌0+歌曲和#点歌1+bv号两种点歌方式
-    #翻唱:返回值为1，表示为正常的功能调用，使用方式为先输入#翻唱获取翻唱列表，再输入#翻唱+序号来翻唱对应的歌
-    #唱歌:返回值为1，表示为正常的功能调用，需要配合#命令来使用。#唱歌+你想搜索的音乐特征（为歌库.csv中储存的第一行标签，只要是你填写过的一般都可以。）
-    #命令:返回值为1，表示为正常的功能调用，需要配合#唱歌来使用。用来选择#唱歌中搜索到的具体音乐。可以选择单选，也可以多选如:#序号0，1，3，4，7-16，18
-    #复读:返回值为1，表示为正常的功能调用，复读后面的内容，一般用来测试语音模块。
-    #播放列表:返回值为1，表示为正常的功能调用，可以打印之后将要播放的歌曲名称（包括点歌和唱歌两个功能的），不过不能显示正在播放的歌名。
-    其余弹幕，返回值为0，会被过滤掉。
+    Classifier: routes chat content to different features.
+    #chat: returns -1 for a chat task.
+    #draw: returns 1 for SD prompt execution.
+    #song: returns 1 for requests, supports #song0 + title or #song1 + BV id.
+    #cover: returns 1 for cover list and #cover + number to sing.
+    #sing: returns 1, use with #command and tags from the song library csv.
+    #command: returns 1, select songs by index or ranges like #id 0,1,3,4,7-16.
+    #repeat: returns 1 and repeats content for TTS testing.
+    #playlist: returns 1 and prints upcoming songs (requests and sing features).
+    Other messages return 0 and are filtered out.
     :param content:
     :return:
     """
     global songlist,song_lst
-    if content[0:3] == "#聊天":
+    if content.startswith("#chat"):
         return -1
 
-    elif content[0:3] == "#复读":
-        AnswerList.put(content[3:])
+    elif content.startswith("#repeat"):
+        AnswerList.put(content[7:])
         return 1
 
-    elif content[0:5] == "#播放列表":
+    elif content.startswith("#playlist"):
         current_songs = list(song_lst.queue)
-        print("播放列表:",current_songs)
+        print("Playlist:", current_songs)
         with file_lock:
             with open('configs/config.json', encoding="utf-8", mode='r') as config_file:
                 config_data = json.load(config_file)
             config_data["songlist"] = current_songs
         current_songs_str = ",".join(current_songs)
-        web_captions_printer.put("播放列表:"+current_songs_str)
+        web_captions_printer.put("Playlist:" + current_songs_str)
         with file_lock:
             with open('configs/config.json', 'w', encoding='utf-8') as config_file:
                 json.dump(config_data, config_file, indent=4, ensure_ascii=False)
         return 1
 
-# llm线程
+# LLM thread
 async def check_answer():
     """
-    如果AI没有在生成回复且队列中还有问题 则创建一个生成的线程
+    Create a generation thread when the model is idle and questions are queued.
     :return:
     """
     global is_ai_ready
@@ -129,7 +129,7 @@ async def check_answer():
 
 def ai_response():
     """
-    提取问题中是否存在会影响到主播情绪变化的关键词，获取该关键词的信息并计算变换后的情绪值。提供一个角色信息字典给llm参考并回复，将得到的回复内容进行临时存储并存入语音合成队列
+    Extract emotion keywords, compute updated emotion state, and queue the response for TTS.
     :return:
     """
     global is_ai_ready,emotion_state,emotion_score
@@ -139,12 +139,12 @@ def ai_response():
     data_agent_to_do = {"content": user_input, "memory": True}
     res = requests.post(f'http://localhost:9550/agent_to_do', json=data_agent_to_do).json()
     bot_response = res.get("content")
-    answer = f"回复{user_name}：{bot_response}"
+    answer = f"Reply to {user_name}: {bot_response}"
     AnswerList.put(f"{user_input}" + "," + answer)
     current_question_count = QuestionList.qsize()
     print(f"\033[31m[AI-Vtuber]\033[0m{answer}")
     print(
-        f"\033[32mSystem>>\033[0m[{user_name}]的回复已存入队列，当前剩余问题数:{current_question_count}"
+        f"\033[32mSystem>>\033[0mQueued response for {user_name}. Remaining: {current_question_count}"
     )
     time1 = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with file_lock:
@@ -154,10 +154,10 @@ def ai_response():
             )
     is_ai_ready = 1
 
-# tts线程
+# TTS thread
 async def check_tts():
     """
-    如果语音已经放完且队列中还有回复 则创建一个合成TTS的线程
+    Create a TTS thread when playback is idle and responses are queued.
     :return:
     """
     global is_tts_ready,AudioCount
@@ -169,14 +169,14 @@ async def check_tts():
 
 def tts_main(text):
     '''
-    当前支持
+    Supported
     1.edge-tts+svc -> so-vits-svc
     2.gpt-sovits
     3.bert-vits2
-    :param text: 需要合成的文本
+    :param text: text to synthesize
 
     '''
-    # 创建输出文件夹
+    # Create output directory
     global AudioCount,is_tts_ready
     tts_plan = 1
     if role_speech_model == "edge-tts+svc":
@@ -194,7 +194,7 @@ def tts_main(text):
 
 async def check_tts_play():
     """
-    若已经播放完毕且播放列表中有数据 则创建一个播放tts音频的线程
+    Create a TTS playback thread when the playlist has items.
     :return:
     """
     global is_tts_play_ready,is_song_play_ready,if_easy_ai_vtuber
@@ -213,13 +213,13 @@ async def check_tts_play():
 
 def mpv_play(path):
     """
-    播放tts音频
-    :param path: 音频路径
+    Play TTS audio.
+    :param path: audio path
     :return:
     """
     duration = utils.get_duration_ffmpeg(path)
     global is_tts_play_ready
-    # end:播放多少秒结束  volume：音量，最大100，最小0
+    # end: playback seconds; volume range 0-100
     subprocess.run(
         f'mpv.exe -vo null --volume=100 --start=0 --end={duration} "{path}" 1>nul',
         shell=False,
@@ -232,24 +232,24 @@ def to_easy_ai_vtuber_api(type,path):
     data = {}
     if type == "speak":
         data = {
-            "type": type,  # 说话动作
-            "speech_path": path  # 语音音频路径
+            "type": type,  # speech motion
+            "speech_path": path,  # speech audio path
         }
     elif type == "rhythm":
         data = {
-            "type": type,  # 节奏摇动作
-            "music_path": path  # 歌曲音频路径
+            "type": type,  # rhythm motion
+            "music_path": path,  # song audio path
         }
     elif type == "sing":
         data = {
             "type": "sing",
-            "music_path": path,  # 修改为原曲路径
-            "voice_path": path,  # 修改为人声音频路径
-            "mouth_offset": 0.0
+            "music_path": path,  # original track path
+            "voice_path": path,  # vocal track path
+            "mouth_offset": 0.0,
         }
     response = requests.post(easy_ai_vtuber_url, json=data)
     if response.status_code == 200:
-        print("\033[31measy_ai_vtuber_api请求成功\033[0m")
+        print("\033[31mSuccessfully requested easy_ai_vtuber_api\033[0m")
     is_tts_play_ready = 1
     is_song_play_ready = 1
     is_song_cover_ready = 1
@@ -260,12 +260,12 @@ def app_server():
 async def main():
     app_thread = threading.Thread(target=app_server)
     app_thread.start()
-    # 添加定时任务
+    # Add scheduled tasks
     sched1.add_job(check_answer, "interval", seconds=1, id="llm_answer", max_instances=1)
     sched1.add_job(check_tts, "interval", seconds=1, id="tts", max_instances=4)
     sched1.add_job(check_tts_play, "interval", seconds=1, id="tts_play", max_instances=1)
 
-    # 启动调度器
+    # Start scheduler
     sched1.start()
     try:
         while True:
@@ -273,7 +273,7 @@ async def main():
     except KeyboardInterrupt:
         pass
     finally:
-        # 关闭调度器
+        # Stop scheduler
         sched1.shutdown()
 
 

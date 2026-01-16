@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import csv
+import re
 from func.chroma_database import chroma_database
 from fuzzywuzzy import process
 import tool.search_for_song
@@ -17,17 +18,17 @@ class KeywordAssociationManager:
 
     def add_keyword(self, new_keyword):
         """
-        添加新的关键词到CSV文件中
-        :param new_keyword: 要添加的关键词
+        Add a new keyword to the CSV file.
+        :param new_keyword: keyword to add
         """
         if new_keyword not in self.keyword_dict:
-            # 如果关键词不存在，则创建新的一行
+            # If keyword is missing, create a new row.
             self.keyword_dict[new_keyword] = []
             self.save_csv()
             self.get_association(new_keyword)
             self.add_association("None")
         else:
-            print(f"关键词 '{new_keyword}' 已经存在于CSV文件中。")
+            print(f"Keyword '{new_keyword}' already exists in the CSV file.")
 
     def load_csv(self):
         with open(self.csv_file_path, 'r', encoding='gbk') as file:
@@ -35,32 +36,34 @@ class KeywordAssociationManager:
             for row in csv_reader:
                 keyword = row['keyword']
                 association_str = row['association']
-                association = association_str.split('，')  # 使用中文逗号分隔字符串
+                association = [
+                    item.strip() for item in re.split(r"[，,]", association_str) if item.strip()
+                ]
                 emotion = row['emotion']
                 self.keyword_dict[keyword] = association
                 self.emotion_dict[keyword] = emotion
 
     def update_emotion(self, keyword, new_emotion):
         """
-        更新关键词对应的情绪标签
-        :param keyword: 要更新情绪标签的关键词
-        :param new_emotion: 新的情绪标签
+        Update the emotion label for a keyword.
+        :param keyword: keyword to update
+        :param new_emotion: new emotion label
         """
         if keyword in self.keyword_dict:
             self.emotion_dict[keyword] = new_emotion
-            self.save_csv()  # 及时更新CSV文件
-            print(f"关键词 '{keyword}' 的情绪标签已更新为 '{new_emotion}'。")
+            self.save_csv()  # Persist changes
+            print(f"Keyword '{keyword}' emotion updated to '{new_emotion}'.")
         else:
-            print(f"关键词 '{keyword}' 不存在于CSV文件中。")
+            print(f"Keyword '{keyword}' does not exist in the CSV file.")
 
     def add_association(self, new_association):
         if self.current_keyword is not None:
             if self.current_keyword in self.keyword_dict:
                 self.keyword_dict[self.current_keyword].append(new_association)
             else:
-                # 如果关键词不存在，则创建新的一行
+                # If keyword is missing, create a new row.
                 self.keyword_dict[self.current_keyword] = [new_association]
-            self.save_csv()  # 及时更新CSV文件
+            self.save_csv()  # Persist changes
 
     def save_csv(self):
         with open(self.csv_file_path, 'w', encoding='gbk', newline='') as file:
@@ -95,10 +98,10 @@ class KeywordAssociationManager:
 
     def search_keyword_fuzzy(self, search_query, threshold=60):
         """
-        使用模糊搜索查找关键词
-        :param search_query: 要搜索的字符串
-        :param threshold: 模糊匹配的阈值，默认为80
-        :return: 匹配的关键词列表
+    Use fuzzy matching to find keywords.
+    :param search_query: string to search
+    :param threshold: fuzzy matching threshold (default 80)
+    :return: matched keyword list
         """
         matches = process.extractBests(search_query, self.keyword_dict.keys(), score_cutoff=threshold)
         if not matches:
@@ -113,11 +116,11 @@ class KeywordAssociationManager:
 
 def find_most_similar(query, target_list, threshold=8):
     """
-    利用模糊搜索查找与给定字符串最相似的列表元素
-    :param query: 要搜索的字符串
-    :param target_list: 目标列表
-    :param threshold: 模糊匹配的阈值，默认为80
-    :return: 最相似的列表元素，以及相似度分数
+    Use fuzzy matching to find the closest list element.
+    :param query: string to search
+    :param target_list: list of candidates
+    :param threshold: fuzzy matching threshold (default 80)
+    :return: best match and similarity score
     """
     print(query,target_list)
     best_match, score = process.extractOne(query, target_list, score_cutoff=threshold)
@@ -127,7 +130,7 @@ def find_most_similar(query, target_list, threshold=8):
     else:
         return "None", 0
 
-def study_from_bilibili(bv:str,keyword:str,emotion:int):
+def study_from_bilibili(bv: str, keyword: str, emotion: int = 0):
     bv_title = tool.search_for_song.search_bilibili(bv)
     manager = KeywordAssociationManager('csv/keyword_dict.csv')
     manager.add_keyword(keyword)
@@ -137,7 +140,27 @@ def study_from_bilibili(bv:str,keyword:str,emotion:int):
     manager.add_association(bv_title)
     chroma_database.make_db(text_path=os.path.join(project_root, f"chroma_database/database/{keyword}/{bv_title}.txt"), persist_directory=os.path.join(project_root, f"chroma_database/database/{keyword}"), chunk_size=100)
 
-def study_from_txt(keyword:str,emotion:int,txt_name:str):
+def study_from_youtube(video_id: str, keyword: str, emotion: int, audio_path: str | None = None):
+    title = tool.search_for_song.search_youtube_title(video_id) or video_id
+    manager = KeywordAssociationManager('csv/keyword_dict.csv')
+    manager.add_keyword(keyword)
+    manager.update_emotion(keyword, emotion)
+    manager.get_association(keyword)
+    if audio_path is None:
+        audio_path = os.path.join(project_root, f"download/{title}.wav")
+    tool.Fast_Whisper.stt(
+        model_path="faster-whisper-webui/Models/faster-whisper/large-v2",
+        input_path=audio_path,
+        output_path=os.path.join(project_root, f"chroma_database/database/{keyword}"),
+    )
+    manager.add_association(title)
+    chroma_database.make_db(
+        text_path=os.path.join(project_root, f"chroma_database/database/{keyword}/{title}.txt"),
+        persist_directory=os.path.join(project_root, f"chroma_database/database/{keyword}"),
+        chunk_size=100,
+    )
+
+def study_from_txt(keyword: str, emotion: int = 0, txt_name: str = ""):
     manager = KeywordAssociationManager('csv/keyword_dict.csv')
     manager.add_keyword(keyword)
     manager.update_emotion(keyword,emotion)
@@ -151,21 +174,21 @@ def detect_for_keyword(content):
     manager = KeywordAssociationManager('csv/keyword_dict.csv')
     matched_keywords = manager.search_keyword_fuzzy(content)
     if matched_keywords:
-        print(f"模糊匹配到的关键词：{matched_keywords}")
+        print(f"Fuzzy-matched keywords: {matched_keywords}")
         for keyword in matched_keywords:
             associations = manager.get_association(keyword)
-            print(f'{keyword} 对应的关联内容：{associations}')
+            print(f"{keyword} associations: {associations}")
             most_similar_text, similarity_score = find_most_similar(content,associations)
             if most_similar_text:
-                print(f"最相似的内容：{most_similar_text}")
-                print(f"相似度分数：{similarity_score}")
+                print(f"Most similar text: {most_similar_text}")
+                print(f"Similarity score: {similarity_score}")
                 score = int(manager.delect_emotion(keyword))
                 return keyword,score
             else:
-                print(f"未找到与 '{content}' 相似度超过阈值的元素。")
+                print(f"No elements exceeded the similarity threshold for '{content}'.")
                 return "None","None"
     else:
-        print("此次对话为正常对话，不含关键词！")
+        print("Normal conversation detected; no keyword found.")
         return "None","None"
 
 def search_from_memory(content):
@@ -178,15 +201,17 @@ def search_from_memory(content):
 
 if __name__ == '__main__':
     project_root = os.path.dirname(os.path.abspath(__file__))
-    please = input("1.视频学习 2.文本学习")
-    keyword = input("请设定本次学习内容的关键词:")
+    please = input("1. BiliBili video 2. YouTube video 3. Text learning")
+    keyword = input("Enter a keyword for this learning session:")
     output_dir = f"chroma_database/database/{keyword}"
     os.makedirs(output_dir, exist_ok=True)
     if please == "1":
-        bv = input("请输入需要学习的b站视频bv号:")
+        bv = input("Enter the BiliBili BV ID to study:")
         study_from_bilibili(bv=bv,keyword=keyword)
     elif please == "2":
-        txt_name = input("请输入文本名称:")
+        video_id = input("Enter the YouTube video ID to study:")
+        study_from_youtube(video_id=video_id, keyword=keyword, emotion=0)
+    elif please == "3":
+        txt_name = input("Enter the text name:")
         study_from_txt(keyword,txt_name)
-    # print(search_from_memory("三次元桂乃芬是什么梗"))
-
+    # print(search_from_memory("What is the meme about Guinaifen in real life?"))

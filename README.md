@@ -4,109 +4,110 @@
 
 
 ---
-## 项目简介（推荐优先看）
+## Overview
 
 **A fully customizable, end-to-end AI VTuber platform built for live streaming on Twitch, YouTube, and other major creator platforms. The system is powered by a large language model backend and features advanced intent recognition, along with both short-term and long-term memory systems (including direct memory and associative memory), allowing the VTuber to develop personality continuity and contextual awareness over time. Creators can build structured knowledge bases and music libraries, and seamlessly integrate state-of-the-art voice conversion, text-to-speech, image generation, and real-time virtual avatar animation technologies. All functionality is managed through an intuitive client application designed for smooth live operation, rapid customization, and creator-friendly workflows.**
 
-本项目特色：
+Highlights:
 
-- 1.本项目对于本地显卡的要求并不高，能正常运行stable-diffusion的电脑基本都能安心食用本项目。
-- 2.本项目占地面积可能会比较大（完整部署后大约20多g，还不算第三方项目），主要是因为虚拟环境体积比较大，日后会着手解决该问题。
-- 3.本项目内置miniconda3管理虚拟环境，便于用户自行扩展第三方模块。
-- 4.本项目提供了一个可视化的客户端（基于streamlit框架构建），支持：环境管理、虚拟主播定制、扩展项目自启动、一些实用的小工具、直播后端监听、图数据库编辑等操作。
-- 5.本项目提供了对于so-vits-svc4.1项目的训练-推理一条龙服务。
-- 6.本项目提供了一个后端API服务器，支持通过get/post请求获得本项目绝大多数服务。
-- 7.本项目支持虚拟主播模板构建、多人设模板管理、实时切换虚拟主播模板等操作。
-- 8.当前版本中，本项目对接的开源项目包括：so-vits-svc4.1（语音转换）、GPT-Sovits（语音合成）、UVR5（人声分离）、fast-whisper（语音识别）、stable-diffusion-webui（图像生成）、stable-diffusion-comfyui、easyaivtuber（数字人驱动）、rembg（背景扣除）
-- 9.本项目提供的实用小工具包括：视频/音频爬虫、语音识别、人声分离、语音合成、语音转换、AI画画、图片去背景。
-- 10.本项目通过构建角色提示词模板、基于知识图谱查询的认知/作品知识库、基于向量数据库的知识库查询构建AI虚拟主播人设（技术实现可以去看作者的语雀文档或者博客）。
-
----
-
-## 附件
-
-[文档教程(正在更新中)](https://www.yuque.com/alipayxxda4itl6o/xgcgm6)| [视频效果演示（这个是老版本的演示）](https://www.bilibili.com/video/BV1ur421p7CU)|[作者的相关作品集（新版）](https://space.bilibili.com/287906485/channel/collectiondetail?sid=2944499)|[夸克网盘【提供整合包、预训练模型的下载】](https://pan.quark.cn/s/c029ea988d38)
-
-
-## 使用须知
-本项目提供release版以及整合包版。
-
+- 1. Runs on modest GPUs; any system that can run Stable Diffusion should be sufficient.
+- 2. The full deployment footprint can be large (~20GB+ plus third-party projects) due to virtual environments.
+- 3. Bundled Miniconda3 environment management for easy extension.
+- 4. Streamlit client for environment management, VTuber customization, auto-starting extensions, utilities, stream backend monitoring, and graph database editing.
+- 5. End-to-end so-vits-svc 4.1 training + inference workflow.
+- 6. Backend API server that exposes most services via GET/POST.
+- 7. Persona template management with real-time switching.
+- 8. Integrated open-source projects include: so-vits-svc 4.1 (voice conversion), GPT-SoVITS (speech synthesis), UVR5 (vocal separation), fast-whisper (ASR), Stable Diffusion WebUI/ComfyUI (image generation), EasyAIVtuber (avatar driving), rembg (background removal).
+- 9. Utility tools: video/audio downloader, speech recognition, vocal separation, TTS, voice conversion, AI art, background removal.
+- 10. Persona building via prompt templates, graph-based knowledge bases, and vector search (see author docs/blog for details).
 
 ---
-## 当前版本功能介绍
 
-- [x] **当前版本功能：**
-  - [x] 对接哔哩哔哩开放平台
-  - [x] 支持edge-tts+svc实现定制化的语音合成
-  - [x] 支持gpt-sovits
-  - [x] 支持智谱api
-  - [x] 通过图数据库实现本地歌库多元化搜索
-  - [x] 通过向量数据库和知识图谱搭建知识库
-  - [x] 自动化的知识图谱制作工具
-  - [x] 支持多模板AI虚拟主播定制
-  - [x] 具有短期/长期记忆
-  - [x] 支持情感聊天
-  - [x] 支持对话、唱歌、本地/网络搜索、画画四种意图的任务
-  - [x] 对接so-vits-svc并提供训练-推理的一条龙服务
-  - [x] 对接sd（webui和comfyui）
-  - [x] 对接EasyAiVtuber项目
-  - [x] streamlit客户端设计（主要是管理和定制你的ai-vtuber的）
+## Resources
 
-- [ ] **当前主要工作：**
-  - [x] 完善项目文档（在语雀更新【附件中文档教程】）
-  - [ ] 录制相关使用教程（在b站更新）
-  - [x] 发布与本项目相关联的第三方项目整合包（【附件中夸克网盘】）
-
-- [ ] **未来v2版本更新计划（本人大四生，这一年将会比较忙碌，所以v2更新会比较慢）:  **
-- 0、缩减项目体积和运行成本
-- 1、基于electron开发桌面应用（主要任务）
-- 2、主要基于国内性价比较高的LLM继续开发Agent模块
-- 3、完善一个作为AI主播该有的直播间交互功能
-- 4、尝试更多的数字人方案（目前正在考虑以生态较为成熟的live2d技术配合图像生成作为下一阶段的数字人方案），
-例如：https://github.com/user-attachments/assets/9f699967-feb7-4dc8-9f38-b28a64d06c89
+[Docs (WIP)](https://www.yuque.com/alipayxxda4itl6o/xgcgm6) | [Demo video (legacy)](https://www.youtube.com) | [Author portfolio](https://www.worldline-fantasy.top) | [Download bundle](https://pan.quark.cn/s/c029ea988d38)
 
 
+## Usage Notes
 
-## 如何启动本项目
+Release builds and integration bundles are provided.
 
-**前置准备**
 
-release版需要提前下载预训练模型并将其放置于
+---
+## Current Feature Set
+
+- [x] **Available features:**
+  - [x] Twitch and YouTube live chat listeners (new)
+  - [x] Legacy BiliBili open platform listener
+  - [x] edge-tts + svc for customized speech synthesis
+  - [x] GPT-SoVITS support
+  - [x] Zhipu API support
+  - [x] Graph database for flexible local song library search
+  - [x] Knowledge bases via vector DB + knowledge graph
+  - [x] Automated knowledge graph tooling
+  - [x] Multi-template AI VTuber personas
+  - [x] Short-term + long-term memory
+  - [x] Emotion-aware chat
+  - [x] Intent routing: chat, singing, local/network search, drawing
+  - [x] so-vits-svc training + inference workflow
+  - [x] SD integration (WebUI + ComfyUI)
+  - [x] EasyAIVtuber integration
+  - [x] Streamlit client for management/customization
+
+- [ ] **Current focus:**
+  - [x] Improve documentation
+  - [ ] Record updated usage tutorials
+  - [x] Publish integration bundles
+
+- [ ] **Future v2 plan (timeline may be slow):**
+  - 0. Reduce footprint and runtime cost
+  - 1. Electron desktop app (primary)
+  - 2. Expand Agent module with cost-effective LLMs
+  - 3. Improve streamer interaction features
+  - 4. Explore additional avatar pipelines (e.g., Live2D + image generation)
+    Example: https://github.com/user-attachments/assets/9f699967-feb7-4dc8-9f38-b28a64d06c89
+
+
+## Getting Started
+
+**Prerequisites**
+
+Release builds require downloading pretrained models into:
 ```pyth
 runtime
 ├───miniconda3
 └───pretrained_models
     ├───faster-whisper
     	└───large-v2
-    		└───这里
+    		└───(place here)
     ├───gte-base-zh
-    	└───这里
+    	└───(place here)
 tools
 ├───uvr5
     └───uvr5_weights
-        └───这里
+        └───(place here)
 ```
 
-**在本项目根目录中，存在以下两个bat脚本**
+**In the repo root, run the bat scripts:**
 
 ```pyth
-运行 condaenv.bat  #本项目主环境搭建（整合包可以忽略这步）
-运行 start.bat  #启动客户端
+Run condaenv.bat  # Set up the main environment (skip in bundles)
+Run start.bat  # Launch the client
 ```
 
-## 国内镜像源
+## Optional PyPI Mirrors
 ```pyth
-清华：https://pypi.tuna.tsinghua.edu.cn/simple/
-阿里云：http://mirrors.aliyun.com/pypi/simple/
-中国科技大学：https://pypi.mirrors.ustc.edu.cn/simple/
-华中科技大学：http://pypi.hustunique.com/simple/
-上海交通大学：https://mirror.sjtu.edu.cn/pypi/web/simple/
-豆瓣：http://pypi.douban.com/simple/
+Tsinghua: https://pypi.tuna.tsinghua.edu.cn/simple/
+Aliyun: http://mirrors.aliyun.com/pypi/simple/
+USTC: https://pypi.mirrors.ustc.edu.cn/simple/
+HUST: http://pypi.hustunique.com/simple/
+SJTU: https://mirror.sjtu.edu.cn/pypi/web/simple/
+Douban: http://pypi.douban.com/simple/
 ```
 
-## 本项目的数字人效果演示（对接EasyAIVTuber数字人项目实现：以流萤为例）
+## Avatar Demo (EasyAIVTuber integration, example: Firefly)
 
-[流萤：睡眠状态]
+[Firefly: Sleeping]
 
 https://github.com/whoiswennie/AI-Vtuber/assets/104626642/4422cde1-e6c2-4c7c-8562-f5f1d2ab5c8c
 
@@ -115,7 +116,7 @@ https://github.com/whoiswennie/AI-Vtuber/assets/104626642/4422cde1-e6c2-4c7c-856
   Your browser does not support the video tag.
 </video>
 
-[流萤：说话状态]
+[Firefly: Talking]
 
 https://github.com/whoiswennie/AI-Vtuber/assets/104626642/6bb1bfda-c1e4-4a16-812d-f155f3c7619c
 
@@ -124,7 +125,7 @@ https://github.com/whoiswennie/AI-Vtuber/assets/104626642/6bb1bfda-c1e4-4a16-812
   Your browser does not support the video tag.
 </video>
 
-[流萤：点歌状态]
+[Firefly: Song Request]
 
 https://github.com/whoiswennie/AI-Vtuber/assets/104626642/8e5db4d6-f71c-4a94-a474-e5bd5f31f251
 
@@ -133,7 +134,7 @@ https://github.com/whoiswennie/AI-Vtuber/assets/104626642/8e5db4d6-f71c-4a94-a47
   Your browser does not support the video tag.
 </video>
 
-[流萤：唱歌状态]
+[Firefly: Singing]
 
 https://github.com/whoiswennie/AI-Vtuber/assets/104626642/db5347d6-95f7-4836-95fd-00040e9826c4
 
@@ -145,7 +146,7 @@ https://github.com/whoiswennie/AI-Vtuber/assets/104626642/db5347d6-95f7-4836-95f
 ---
 
 
-## 对接仓库
+## Integrations
 
 https://github.com/xfgryujk/blivedm
 

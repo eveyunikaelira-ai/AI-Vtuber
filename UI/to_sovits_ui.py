@@ -15,20 +15,27 @@ def main():
         else:
             st.session_state.so_vits_protect_root_path = ""
     st.write("---")
-    so_vits_protect_root_path = st.text_input("请填写本地so-vits-svc项目的根目录路径",value=st.session_state.so_vits_protect_root_path)
+    so_vits_protect_root_path = st.text_input(
+        "Enter the local so-vits-svc project root path",
+        value=st.session_state.so_vits_protect_root_path,
+    )
     if so_vits_protect_root_path:
         st.session_state.so_vits_protect_root_path = so_vits_protect_root_path
     utils.write_json({"sovits_path":so_vits_protect_root_path},"template/json/project_path.json")
     try:
         if so_vits_protect_root_path:
-            with st.expander("查看教程"):
+            with st.expander("View guide"):
                 with open(os.path.join(so_vits_protect_root_path,"README_zh_CN.md"), 'r',encoding="utf-8") as file:
                     readme_content = file.read()
                 st.markdown(readme_content)
 
-        with st.expander("0.前置准备"):
-            st.caption("你应该提前将音色数据集以下面的格式存放在so-vits-svc项目文件夹中，其中如果希望训练的是单说话人，dataset_raw中仅需存在一个speaker；如果希望训练多说话人，dataset_raw中需要存在多个speaker的子文件夹。")
-            st.caption("原始音色数据集存放格式:")
+        with st.expander("0. Prerequisites"):
+            st.caption(
+                "Place your voice dataset in the so-vits-svc project folder using the format below. "
+                "For single-speaker training, dataset_raw only needs one speaker folder; for multi-speaker, "
+                "use multiple speaker subfolders."
+            )
+            st.caption("Dataset folder structure:")
             st.code("""
                         dataset_raw
                         ├───speaker0
@@ -40,47 +47,56 @@ def main():
                             ├───...
                             └───xxx7-xxx007.wav
                         """)
-            st.caption("其中每一条音频要求为，清晰的，干净的，单个说话人音频（说话与唱歌都可以），需要切片至5-15秒（稍微长一点或者短一点都行）")
+            st.caption(
+                "Each audio clip should be clean, single-speaker audio (speech or singing) "
+                "and trimmed to ~5-15 seconds."
+            )
             st.write("---")
-        with st.expander("1.重采样"):
-            st.caption("虽然本项目拥有重采样、转换单声道与响度匹配的脚本 resample.py，但是默认的响度匹配是匹配到 0db。这可能会造成音质的受损。而 python 的响度匹配包 pyloudnorm 无法对电平进行压限，这会导致爆音。所以建议可以考虑使用专业声音处理软件如`adobe audition`等软件做响度匹配处理。若已经使用其他软件做响度匹配，可以在运行前选择`跳过响度匹配步骤`。")
+        with st.expander("1. Resampling"):
+            st.caption(
+                "The resample.py script includes resampling, mono conversion, and loudness matching. "
+                "Default loudness normalization targets 0db, which can reduce quality. The pyloudnorm "
+                "package does not clamp peaks, which can introduce clipping. Consider using professional "
+                "audio software (e.g., Adobe Audition) for loudness matching. If you've already done this, "
+                "choose 'Skip loudness matching'."
+            )
             st.write("---")
-            is_skip_loudnorm = st.checkbox("跳过响度匹配步骤")
-            if st.button("1.重采样"):
+            is_skip_loudnorm = st.checkbox("Skip loudness matching")
+            if st.button("1. Resample"):
                 if is_skip_loudnorm:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/1重采样-skip_loudnorm.bat"'
                 else:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/1重采样.bat"'
                 subprocess.Popen(command, shell=True)
-        with st.expander("2.自动划分训练集、验证集，以及自动生成配置文件"):
-            st.caption("**使用响度嵌入**若使用响度嵌入，需要选择`使用响度嵌入`")
+        with st.expander("2. Auto-split train/val + generate config"):
+            st.caption("**Loudness embedding**: Enable 'Use loudness embedding' if needed.")
             st.write("---")
-            is_vol_aug = st.checkbox("使用响度嵌入")
-            if st.button("2.自动划分训练集、验证集，以及自动生成配置文件"):
+            is_vol_aug = st.checkbox("Use loudness embedding")
+            if st.button("2. Auto-split train/val + generate config"):
                 if is_vol_aug:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/2划分训练验证集-vol_aug.bat"'
                 else:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/2划分训练验证集.bat"'
                 subprocess.Popen(command, shell=True)
-        with st.expander("打开config文件夹"):
-            if st.button("打开config文件夹"):
+        with st.expander("Open config folder"):
+            if st.button("Open config folder"):
                 subprocess.run(['explorer', os.path.abspath(os.path.join(st.session_state.so_vits_protect_root_path, "configs"))])
-        with st.expander("3.生成hubert与f0"):
-            is_use_diff = st.checkbox("启用浅扩散功能")
-            if st.button("3.生成hubert与f0"):
+        with st.expander("3. Generate hubert + f0"):
+            is_use_diff = st.checkbox("Enable shallow diffusion")
+            if st.button("3. Generate hubert + f0"):
                 if is_use_diff:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/3生成hubert与f0_use_diff.bat"'
                 else:
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/3生成hubert与f0.bat"'
                 subprocess.Popen(command, shell=True)
-        with st.expander("4.模型训练"):
+        with st.expander("4. Model training"):
             col1,col2 = st.columns(2)
-            is_diffusion = col1.checkbox("是否训练扩散模型",key=0)
-            is_tensorboard = col2.checkbox("启动tensorboard",key=1)
+            is_diffusion = col1.checkbox("Train diffusion model", key=0)
+            is_tensorboard = col2.checkbox("Start TensorBoard", key=1)
             if is_tensorboard:
                 command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/启动tensorboard.bat"'
                 subprocess.Popen(command, shell=True)
-            if st.button("4.开始训练"):
+            if st.button("4. Start training"):
                 if is_diffusion:
                     shutil.copy2(f"{st.session_state.so_vits_protect_root_path}/pretrain/diffusion/model_0.pt",
                                  f"{st.session_state.so_vits_protect_root_path}/logs/44k/diffusion")
@@ -90,12 +106,12 @@ def main():
                     shutil.copy2(f"{st.session_state.so_vits_protect_root_path}/pretrain/vec768l12/D_0.pth", f"{st.session_state.so_vits_protect_root_path}/logs/44k")
                     command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/4模型训练.bat"'
                 subprocess.Popen(command, shell=True)
-        with st.expander("5.模型推理"):
-            if st.button("启动webUI"):
+        with st.expander("5. Model inference"):
+            if st.button("Launch WebUI"):
                 command = f'cd /d "{st.session_state.so_vits_protect_root_path}" && start "" "{st.session_state.so_vits_protect_root_path}/启动webUI.bat"'
                 subprocess.Popen(command, shell=True)
-        with st.expander("项目初始化"):
-            if st.button("项目初始化"):
+        with st.expander("Project initialization"):
+            if st.button("Initialize project"):
                 folder_path_lists = [f'{st.session_state.so_vits_protect_root_path}/dataset',f'{st.session_state.so_vits_protect_root_path}/filelists',f'{st.session_state.so_vits_protect_root_path}/logs/44k',f'{st.session_state.so_vits_protect_root_path}/logs/44k/diffusion']
                 for folder_path in folder_path_lists:
                     if os.path.exists(folder_path) and os.path.isdir(folder_path):
@@ -112,7 +128,7 @@ def main():
                                 print(f'Error deleting {file_path}: {e}')
                     else:
                         print(f'The folder {folder_path} does not exist or is not a directory.')
-                st.success("项目初始化成功！")
+                st.success("Project initialized successfully.")
     except Exception as e:
         st.error(e)
 
