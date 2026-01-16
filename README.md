@@ -6,7 +6,7 @@
 ---
 ## 项目简介（推荐优先看）
 
-**本项目旨在实现一个高自由度的可定制AI-VTuber。支持对接哔哩哔哩直播间，以智谱API作为语言基座模型，拥有意图识别、长短期记忆（直接记忆和联想记忆），支持搭建认知库、歌曲作品库，接入了当前热门的一些语音转换、语音合成、图像生成、数字人驱动项目，并提供了一个便于操作的客户端。**
+**A fully customizable, end-to-end AI VTuber platform built for live streaming on Twitch, YouTube, and other major creator platforms. The system is powered by a large language model backend and features advanced intent recognition, along with both short-term and long-term memory systems (including direct memory and associative memory), allowing the VTuber to develop personality continuity and contextual awareness over time. Creators can build structured knowledge bases and music libraries, and seamlessly integrate state-of-the-art voice conversion, text-to-speech, image generation, and real-time virtual avatar animation technologies. All functionality is managed through an intuitive client application designed for smooth live operation, rapid customization, and creator-friendly workflows.**
 
 本项目特色：
 
