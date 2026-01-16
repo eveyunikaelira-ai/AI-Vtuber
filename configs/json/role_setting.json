@@ -1,27 +1,27 @@
 {
-    "默认模板": {
-        "name": "默认模板",
-        "setting": "默认模板的角色设定",
-        "sex": "男/女",
+    "Default Template": {
+        "name": "Default Template",
+        "setting": "Default persona settings",
+        "sex": "Male/Female",
         "age": 0,
         "emotional_display": [
-            "情绪阶段1，语气提示词",
-            "情绪阶段2，语气提示词",
-            "情绪阶段3，语气提示词",
-            "情绪阶段4，语气提示词",
-            "情绪阶段5，语气提示词"
+            "Emotion stage 1 prompt",
+            "Emotion stage 2 prompt",
+            "Emotion stage 3 prompt",
+            "Emotion stage 4 prompt",
+            "Emotion stage 5 prompt"
         ],
         "emotion": 50,
         "tts": {
             "plan_1": {
                 "edge_tts": "",
-                "so_vits_svc": "so_vits_svc模型绝对路径",
-                "so_vits_svc_config": "so_vits_svc配置文件绝对路径"
+                "so_vits_svc": "Absolute path to so-vits-svc model",
+                "so_vits_svc_config": "Absolute path to so-vits-svc config"
             },
             "plan_2": {
-                "gpt_sovits": "gpt_sovits模型名称"
+                "gpt_sovits": "gpt_sovits model name"
             }
         },
-        "easyaivtuber_dir_path": "easyaivtuber项目静态图片的绝对路径"
+        "easyaivtuber_dir_path": "Absolute path to EasyAIVtuber static images"
     }
 }

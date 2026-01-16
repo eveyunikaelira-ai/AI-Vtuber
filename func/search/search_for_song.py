@@ -11,47 +11,47 @@ from concurrent.futures import ThreadPoolExecutor
 
 #sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf8')
 
-# 创建线程池
+# Create thread pool
 from pydub import AudioSegment
 
 pool = ThreadPoolExecutor(max_workers=10)
-# 请求头信息
+# Request headers
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
 }
 def download(id, name):
     output_dir = "download"
     os.makedirs(output_dir, exist_ok=True)
-    # 构造下载链接
+    # Build download URL
     url = f'http://music.163.com/song/media/outer/url?id={id}'
-    # 发送下载请求
+    # Send download request
     response = requests.get(url=url, headers=headers).content
-    # 将响应内容写入文件
+    # Write response content to file
     with open('download/' + name + '.wav', 'wb') as f:
         f.write(response)
-    # 打印下载完成消息
-    print(name, '下载完成')
+    # Log download completion
+    print(name, "downloaded.")
 
 
 def get_id(url):
-    # 发送请求获取页面内容
+    # Fetch page content
     response = requests.get(url=url, headers=headers).text
-    # 使用XPath解析页面
+    # Parse with XPath
     page_html = etree.HTML(response)
-    # 提取歌曲列表信息
+    # Extract song list
     id_list = page_html.xpath('//textarea[@id="song-list-pre-data"]/text()')[0]
-    # 解析歌曲列表信息，并逐个提交下载任务到线程池
+    # Parse and enqueue downloads
     for i in json.loads(id_list):
         name = i['name']
         id = i['id']
         author = i['artists'][0]['name']
         pool.submit(download, id, name + '-' + author)
-    # 关闭线程池
+    # Close thread pool
     pool.shutdown()
 
 
 def replace_special_characters(filename):
-    # 定义需要替换的特殊字符和替换后的字符
+    # Special character replacements
     special_chars = {
         '/': '_',
         '\\': '_',
@@ -81,31 +81,31 @@ def replace_special_characters(filename):
         '(': '',
         ')': '',
         '-':'_'
-        # 添加其他特殊字符...
+        # Add other special characters as needed...
     }
 
-    # 使用正则表达式进行替换
+    # Replace using regex
     for char, replacement in special_chars.items():
         filename = re.sub(re.escape(char), replacement, filename)
 
     return filename
 
 def search_in_wy(keyword):
-    # 创建线程池
+    # Create thread pool
     pool = ThreadPoolExecutor(max_workers=10)
-    # 请求头信息
+    # Request headers
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3741.400 QQBrowser/10.5.3863.400"
     }
-    # 构造搜索URL
+    # Build search URL
     search_url = f'https://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={keyword}&type=1&offset=0&total=true&limit=5'
-    # 发送搜索请求并获取响应内容
+    # Send search request and fetch response
     response = requests.get(url=search_url, headers=headers).json()
     print(response)
-    # 提取歌曲列表
+    # Extract song list
     song_list = response['result']['songs']
     print(song_list)
-    # 遍历歌曲列表，逐个提交下载任务到线程池
+    # Enqueue each song for download
     for song in song_list:
         name = song['name']
         name = replace_special_characters(name)
@@ -116,18 +116,18 @@ def search_in_wy(keyword):
             file_size = os.path.getsize("download/"+name + '-' + author+".wav")
             file_size_kb = file_size / 1024
             if file_size_kb < 500:
-                print(name + '-' + author+".wav为VIP歌曲，即将跳过...")
+                print(name + "-" + author + ".wav is VIP-only. Skipping...")
                 continue
             else:
-                print("该歌曲已下载")
+                print("The song is already downloaded.")
                 pool.shutdown()
                 return name + '-' + author
 
         pool.submit(download, id, name + '-' + author)
-        # 关闭线程池
+        # Close thread pool
         pool.shutdown()
         return name + '-' + author
-    # 关闭线程池
+    # Close thread pool
     pool.shutdown()
     return None
 
@@ -150,10 +150,10 @@ def search_bilibili(bv):
         audio_content = requests.get(url=audio_url,headers=headers).content
         with open("download/"+title+".wav",mode="wb")as audio:
             audio.write(audio_content)
-        print(bv,"已下载！")
+        print(bv, "downloaded.")
         return title
     else:
-        print("bv号不正确，请重新输入！！！")
+        print("Invalid BV ID. Please try again.")
         return None
 
 
@@ -174,39 +174,53 @@ def search_bilibili_mp4(bv):
         json_data = json.loads(video_info)
         video_url = json_data["data"]["dash"]["video"][0]["baseUrl"]
         audio_url = json_data["data"]["dash"]["audio"][0]["baseUrl"]
-        # 创建一个文件夹来保存下载的视频
+        # Create folder for downloaded videos
         os.makedirs("download", exist_ok=True)
-        # 下载视频
+        # Download video
         video_content = requests.get(url=video_url, headers=headers).content
         with open(f"download/{title}.mp4", mode="wb") as video_file:
             video_file.write(video_content)
 
-        # 下载音频
+        # Download audio
         audio_content = requests.get(url=audio_url, headers=headers).content
         with open(f"download/{title}.wav", mode="wb") as audio:
             audio.write(audio_content)
-        print(f"视频 {title} 已下载！")
-        print(f"音频 {title} 已下载！")
+        print(f"Video {title} downloaded.")
+        print(f"Audio {title} downloaded.")
         merge_video_audio(f"download/{title}.mp4",f"download/{title}.wav","download/merged_video.mp4")
         return title
     else:
-        print("bv号不正确，请重新输入！！！")
+        print("Invalid BV ID. Please try again.")
         return None
 
 
 def merge_video_audio(video_file, audio_file, output_file):
-    # 构建 ffmpeg 命令
+    # Build ffmpeg command
     command = f'ffmpeg -i {video_file} -i {audio_file} -c:v copy -c:a aac -strict experimental -loglevel error -y {output_file}'
 
-    # 执行命令
+    # Execute command
     os.system(command)
 
-    # 删除原始文件
+    # Remove source files
     os.remove(video_file)
     os.remove(audio_file)
+
+
+def search_youtube_title(video_id: str):
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+    try:
+        response = requests.get(
+            "https://www.youtube.com/oembed",
+            params={"url": video_url, "format": "json"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json().get("title")
+    except requests.RequestException:
+        return None
 
 if __name__ == '__main__':
 
     search_bilibili_mp4("BV1Hw411z7Dy")
-    #search_in_wy("悬溺")
+    # search_in_wy("Example song")
     #search_bilibili("BV1ru4y1M7fj")

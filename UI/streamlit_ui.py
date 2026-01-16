@@ -15,9 +15,9 @@ from tqdm import tqdm
 project_root = os.path.dirname(os.path.abspath(__file__))[:-2]
 
 def get_properties():
-    # 文件路径
+    # File path
     file_path = "template/json/template.json"
-    # 检查文件是否存在
+    # Check whether the file exists
     if not os.path.exists(file_path):
         return {}
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -41,29 +41,41 @@ def create_form(data,key_path = []):
                 from func.chat.chat_api import model_list
                 data[key] = st.selectbox(key, model_list, index=0)
                 continue
-            user_input = st.text_input('.'.join(current_key_path), value=value,placeholder=value if value else "请输入字符串...")
+            user_input = st.text_input(
+                ".".join(current_key_path),
+                value=value,
+                placeholder=value if value else "Enter a string...",
+            )
             if user_input:
                 data[key] = user_input
         elif isinstance(value, int):
-            user_input = st.number_input('.'.join(current_key_path), value=value,placeholder=value if value else "请输入整数...", step=1,
-                                         format="%d")
+            user_input = st.number_input(
+                ".".join(current_key_path),
+                value=value,
+                placeholder=value if value else "Enter an integer...",
+                step=1,
+                format="%d",
+            )
             if user_input is not None:
                 data[key] = user_input
         elif isinstance(value, float):
-            user_input = st.number_input('.'.join(current_key_path), value=value,
-                                         placeholder=value if value else "请输入小数...")
+            user_input = st.number_input(
+                ".".join(current_key_path),
+                value=value,
+                placeholder=value if value else "Enter a decimal...",
+            )
             if user_input is not None:
                 data[key] = user_input
         elif isinstance(value, bool):
             data[key] = st.checkbox('.'.join(current_key_path), value)
         elif isinstance(value, list):
-            # placeholder = "每行一个列表项..." if not value else '\n'.join(map(str, value))
+            # placeholder = "One item per line..." if not value else '\n'.join(map(str, value))
             # list_items = st.text_area('.'.join(current_key_path), value=value,placeholder=placeholder)
             # if list_items:
             #     data[key] = json.loads(list_items.split('\n'))
             pass
         elif isinstance(value, dict):
-            # 对于字典，递归地创建表单
+            # For dicts, create nested forms recursively
             create_form(value, current_key_path)
         else:
             st.write(f"Unsupported data type: {type(value)}")
@@ -71,18 +83,22 @@ def create_form(data,key_path = []):
 
 def env_configuration(default_file_path="configs/json/config.json"):
     """
-    管理和安装运行环境
+    Manage and install the runtime environment.
     Returns:
 
     """
-    t1,t2 = st.tabs(["虚拟环境管理","虚拟主播配置"])
+    t1, t2 = st.tabs(["Virtual Environment", "VTuber Configuration"])
     with t1:
-        e_select = st.selectbox("创建或更新虚拟环境：", ["创建新虚拟环境", "选择已有虚拟环境"], index=1)
-        if e_select == "选择已有虚拟环境":
+        e_select = st.selectbox(
+            "Create or update environment:",
+            ["Create a new environment", "Use an existing environment"],
+            index=1,
+        )
+        if e_select == "Use an existing environment":
             folder_path = os.path.join(project_root, "requirements")
             file_names = os.listdir(folder_path)
             file_name_list = [file_name for file_name in file_names]
-            selected_requirement = st.selectbox("选择环境依赖配置文件：", file_name_list, index=0)
+            selected_requirement = st.selectbox("Select requirements file:", file_name_list, index=0)
             mirror_source_list = [
                 "https://pypi.tuna.tsinghua.edu.cn/simple/",
                 "http://mirrors.aliyun.com/pypi/simple/",
@@ -91,43 +107,43 @@ def env_configuration(default_file_path="configs/json/config.json"):
                 "https://mirror.sjtu.edu.cn/pypi/web/simple/",
                 "http://pypi.douban.com/simple/"
             ]
-            mirror_source = st.selectbox("选择镜像源：", mirror_source_list, index=0)
+            mirror_source = st.selectbox("Select PyPI mirror:", mirror_source_list, index=0)
             folder_contents = os.listdir("runtime\miniconda3\envs")
             envs_name = [f for f in folder_contents if os.path.isdir(os.path.join("runtime\miniconda3\envs", f))]
-            env_name = st.selectbox("选择虚拟环境：", envs_name, index=0)
-            if st.button("安装依赖"):
+            env_name = st.selectbox("Select environment:", envs_name, index=0)
+            if st.button("Install dependencies"):
                 command = f"{project_root}\\runtime\\miniconda3\\envs\\{env_name}\\python.exe -m pip install -r {project_root}\\requirements\\{selected_requirement} -i {mirror_source}"
                 subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
                 st.write(command)
-            c = st.text_input("安装指定包:",placeholder="pip install ...")
-            if st.button("安装依赖",key=1):
+            c = st.text_input("Install a specific package:", placeholder="pip install ...")
+            if st.button("Install dependency", key=1):
                 command = f"{project_root}\\runtime\\miniconda3\\envs\\{env_name}\\python.exe -m {c} -i {mirror_source}"
                 subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
                 st.write(command)
-        elif e_select == "创建新虚拟环境":
-            new_env_name = st.text_input("请输入待创建虚拟环境名称:")
-            new_python_version = st.text_input("请输入待创建虚拟环境python版本:", placeholder="3.10")
-            if st.button("新建虚拟环境"):
+        elif e_select == "Create a new environment":
+            new_env_name = st.text_input("Environment name:")
+            new_python_version = st.text_input("Python version:", placeholder="3.10")
+            if st.button("Create environment"):
                 command = f"{project_root}\\runtime\\miniconda3\\Scripts\\conda.exe create --name {new_env_name} python={new_python_version} -y"
                 subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
     with t2:
-        s = st.selectbox("请选择需要进行的操作",["新建config","修改config"],index=1)
-        if s == "新建config":
+        s = st.selectbox("Select an action", ["Create config", "Edit config"], index=1)
+        if s == "Create config":
             default_file_path="configs/json/config.example.json"
         try:
             data = utils.load_json(default_file_path)
             st.write(project_root)
-            select_key = st.selectbox("选择需要编辑的组", list(data.keys()), index=0)
-            with st.form("config编辑"):
+            select_key = st.selectbox("Select a group to edit", list(data.keys()), index=0)
+            with st.form("Config Editor"):
                 st.write(select_key)
                 create_form(data[select_key])
-                if st.form_submit_button("保存"):
+                if st.form_submit_button("Save"):
                     utils.write_json(data,"configs/json/config.json")
-                    st.success("保存成功")
+                    st.success("Saved successfully")
         except FileNotFoundError:
-            st.error(f"默认文件 '{default_file_path}' 不存在。")
+            st.error(f"Default file '{default_file_path}' not found.")
         except Exception as e:
-            st.error(f"读取默认文件时出错: {e}")
+            st.error(f"Error reading default file: {e}")
 
 
 
@@ -139,7 +155,7 @@ def main_page(hps,role_hps):
         initial_sidebar_state="expanded",
         menu_items={
             'Get help': "http://www.worldline-fantasy.top",
-            'Report a bug': "https://space.bilibili.com/287906485?spm_id_from=333.1007.0.0",
+            'Report a bug': "https://github.com/whoiswennie/AI-Vtuber/issues",
             'About': "http://www.worldline-fantasy.top"
         }
     )
@@ -157,33 +173,34 @@ def main_page(hps,role_hps):
         st.session_state.gif_index += 1
         current_index = int(st.session_state.get("gif_index", 0) % len(gif_files))
         current_gif = gif_files[current_index]
-        st.sidebar.image(current_gif, caption='本项目的看板娘：幻酱', use_column_width=True)
+        st.sidebar.image(current_gif, caption="Project mascot: Huan", use_column_width=True)
         st.title('AI-VTuber')
-        st.markdown('项目作者:这就是天幻呀')
-        st.markdown("[博客官网](http://www.worldline-fantasy.top)")
-        st.markdown("[GitHub项目主页](https://github.com/whoiswennie/AI-Vtuber)")
-        st.markdown("[哔哩哔哩主页](https://space.bilibili.com/287906485)")
+        st.markdown("Project author: Tianhuan")
+        st.markdown("[Official site](http://www.worldline-fantasy.top)")
+        st.markdown("[GitHub repository](https://github.com/whoiswennie/AI-Vtuber)")
+        st.markdown("[YouTube](https://www.youtube.com)")
+        st.markdown("[Twitch](https://www.twitch.tv)")
         st.markdown('---')
-        page = st.sidebar.radio("页面导航", ["配置环境","AI-VTuber","个性定制"])
-    if page == "配置环境":
+        page = st.sidebar.radio("Navigation", ["Environment", "AI-VTuber", "Personalization"])
+    if page == "Environment":
         env_configuration()
     elif page == "AI-VTuber":
-        with st.expander("一键启动脚本管理"):
+        with st.expander("Quick-start script manager"):
             bats_path = None
-            bat_select = st.selectbox("选择项目的一键启动脚本：", ["选择待启动的服务","配置一键启动脚本"], index=0)
-            if bat_select == "配置一键启动脚本":
-                bat_select_2 = st.selectbox("新增（修改）或删除脚本:", ["新增（修改）脚本","删除脚本"], index=0)
+            bat_select = st.selectbox("Select quick-start script:", ["Select services", "Configure scripts"], index=0)
+            if bat_select == "Configure scripts":
+                bat_select_2 = st.selectbox("Add/update or delete scripts:", ["Add or update", "Delete"], index=0)
                 with open("configs/json/bat_start.json", 'r', encoding='utf-8') as file:
                     data = json.load(file)
-                if bat_select_2 == "新增（修改）脚本":
+                if bat_select_2 == "Add or update":
                     bat_names = [item['bat_name'] for item in data if "bat_name" in item]
-                    bat_name_select = st.selectbox("选择项目的一键启动脚本：", bat_names, index=0)
+                    bat_name_select = st.selectbox("Select a script:", bat_names, index=0)
                     if bat_name_select:
                         st.write([item["bat_path"] for item in data if item["bat_name"] == bat_name_select][0])
-                    bat_name = st.text_input("请输入一键启动脚本的项目名称:")
-                    bat_path = st.text_input("请输入bat脚本的绝对路径:", placeholder="例如:D:/so-vits-svc/api.bat")
+                    bat_name = st.text_input("Script display name:")
+                    bat_path = st.text_input("Absolute path to bat script:", placeholder="e.g. D:/so-vits-svc/api.bat")
                     bat_dict = {"bat_name":bat_name,"bat_path":bat_path}
-                    if st.button("保存"):
+                    if st.button("Save"):
                         if bat_name in bat_names:
                             for item in data:
                                 if item["bat_name"] == bat_name and bat_path != None:item["bat_path"] = bat_path
@@ -193,30 +210,30 @@ def main_page(hps,role_hps):
                             data.append(bat_dict)
                             with open("configs/json/bat_start.json", 'w', encoding='utf-8') as file:
                                 json.dump(data,file, ensure_ascii=False, indent=4)
-                        st.success("保存成功")
-                elif bat_select_2 == "删除脚本":
+                        st.success("Saved successfully")
+                elif bat_select_2 == "Delete":
                     d_bat_name = st.multiselect(
-                        "选择你需要删除的脚本:",
+                        "Select scripts to delete:",
                         [item for item in data ]
                     )
-                    if st.button("删除"):
+                    if st.button("Delete"):
                         data = [item for item in data + d_bat_name if item not in data or item not in d_bat_name]
                         with open("configs/json/bat_start.json", 'w', encoding='utf-8') as file:
                             json.dump(data, file, ensure_ascii=False, indent=4)
-                        st.success("删除成功")
-            elif bat_select == "选择待启动的服务":
+                        st.success("Deleted successfully")
+            elif bat_select == "Select services":
                 with open("configs/json/bat_start.json", 'r', encoding='utf-8') as file:
                     data = json.load(file)
                 bat_names = [item['bat_name'] for item in data if "bat_name" in item]
                 bats_start = st.multiselect(
-                    "选择你需要开启的服务:",
+                    "Select services to start:",
                     bat_names
                 )
                 bats_path = [item["bat_path"] for item in data if item["bat_name"] in bats_start]
             st.markdown("---")
             col0, col1, col2, col3, col4 = st.columns(5)
             with col0:
-                if st.button("一键启动bat"):
+                if st.button("Launch bat scripts"):
                     if bats_path is not None:
                         for p in bats_path:
                             print(p)
@@ -224,46 +241,75 @@ def main_page(hps,role_hps):
                                 command = f'cd /d "{os.path.dirname(p)}" && start "" "{p}"'
                                 print(command)
                                 subprocess.Popen(command, shell=True)
-                                st.success(f"成功启动脚本: {p}")
+                                st.success(f"Started script: {p}")
                             except FileNotFoundError:
-                                st.error(f"脚本未找到: {p}")
+                                st.error(f"Script not found: {p}")
                             except subprocess.CalledProcessError as e:
-                                st.error(f"脚本执行出错: {p}，错误代码: {e.returncode}")
+                                st.error(f"Script error: {p}, exit code: {e.returncode}")
                             except Exception as e:
-                                st.error(f"启动脚本时发生未知错误: {p}，错误信息: {str(e)}")
+                                st.error(f"Unknown error starting script: {p}, error: {str(e)}")
                     else:
-                        st.warning("没有可用的BAT脚本路径。")
+                        st.warning("No bat script paths available.")
             with col1:
-                if st.button("开启直播"):
+                platform = st.selectbox(
+                    "Streaming platform",
+                    ["Twitch", "YouTube", "BiliBili (legacy)"],
+                    index=0,
+                )
+                if platform == "Twitch":
+                    twitch_username = st.text_input("Twitch username")
+                    twitch_oauth = st.text_input("Twitch OAuth token (oauth:...)")
+                    twitch_channel = st.text_input("Channel name")
+                elif platform == "YouTube":
+                    youtube_api_key = st.text_input("YouTube API key")
+                    youtube_video_id = st.text_input("YouTube live video ID")
+                else:
                     ACCESS_KEY_ID = hps.bilibili.blivedm.ACCESS_KEY_ID
                     ACCESS_KEY_SECRET = hps.bilibili.blivedm.ACCESS_KEY_SECRET
                     APP_ID = hps.bilibili.blivedm.APP_ID
                     ROOM_OWNER_AUTH_CODE = hps.bilibili.blivedm.ROOM_OWNER_AUTH_CODE
-                    command_1 = f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe blivedm_api.py -AKI {ACCESS_KEY_ID} -AKS {ACCESS_KEY_SECRET} -AI {APP_ID} -ROAC {ROOM_OWNER_AUTH_CODE}'
+                if st.button("Start stream listeners"):
                     command_2 = f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe bilibili_main.py'
+                    if platform == "Twitch":
+                        command_1 = (
+                            f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe '
+                            f'twitch_main.py --username "{twitch_username}" --oauth-token "{twitch_oauth}" '
+                            f'--channel "{twitch_channel}"'
+                        )
+                    elif platform == "YouTube":
+                        command_1 = (
+                            f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe '
+                            f'youtube_main.py --api-key "{youtube_api_key}" --video-id "{youtube_video_id}"'
+                        )
+                    else:
+                        command_1 = (
+                            f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe blivedm_api.py '
+                            f'-AKI {ACCESS_KEY_ID} -AKS {ACCESS_KEY_SECRET} -AI {APP_ID} '
+                            f'-ROAC {ROOM_OWNER_AUTH_CODE}'
+                        )
                     subprocess.Popen(['start', 'cmd', '/k', command_1], shell=True)
                     subprocess.Popen(['start', 'cmd', '/k', command_2], shell=True)
-                    st.success("直播已开始")
+                    st.success("Stream listeners started.")
             with col2:
-                if st.button("终止mpv播放器"):
+                if st.button("Stop mpv player"):
                     import psutil
                     import signal
-                    # 查找包含 "mpv" 的进程列表
+                    # Find processes containing "mpv"
                     for proc in psutil.process_iter(['pid', 'name']):
                         if 'mpv' in proc.name():
                             mpv_pid = proc.pid
-                            # 终止找到的 mpv 进程
+                            # Terminate the mpv process
                             proc.send_signal(signal.SIGTERM)
             with col3:
-                if st.button("启动flask服务端"):
-                    st.success("flask服务端启动成功")
+                if st.button("Start Flask backend"):
+                    st.success("Flask backend started successfully.")
                     command = f'{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe flask_ai_vtuber_api.py'
                     subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
             with col4:
-                if st.button("判断所有端口是否启动"):
+                if st.button("Check service ports"):
                     import socket
                     urls = [
-                        {"flask服务端": "http://0.0.0.0:9550"},
+                        {"Flask backend": "http://0.0.0.0:9550"},
                         {"so_vits_svc_api": hps.api_path.so_vits_svc.url},
                         {"bert_vits2_api": hps.api_path.bert_vits2.url},
                         {"gpt_sovits_api": hps.api_path.gpt_sovits.url},
@@ -285,40 +331,40 @@ def main_page(hps,role_hps):
                         api_url = next(iter(url.values()), None)
                         host, port = utils.extract_port_and_url(api_url)
                         if is_port_in_use(host, port):
-                            st.success(f"{api_name} 端口 {port} 已启动")
+                            st.success(f"{api_name} port {port} is running.")
                         else:
-                            st.error(f"{api_name} 端口 {port} 未启动")
+                            st.error(f"{api_name} port {port} is not running.")
 
-        with st.expander("直播监听"):
+        with st.expander("Stream tools"):
             empty_directory_list = ["downloads", "json", "stt", "tts", "img", "txt", "logs", "uploads", "uvr5_opt"]
-            select_directory_list = st.multiselect("请选择需要清理的临时文件夹",empty_directory_list)
+            select_directory_list = st.multiselect("Select temp folders to clear", empty_directory_list)
             live_col1, live_col2, live_col3, live_col4 = st.columns(4)
-            if live_col1.button("清理临时文件夹"):
+            if live_col1.button("Clear temp folders"):
                 formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 try:
-                    st.success(f"{select_directory_list}已清空！")
-                    print(f"[{formatted_time}]INFO 初始化临时文件夹{select_directory_list}...")
+                    st.success(f"Cleared: {select_directory_list}")
+                    print(f"[{formatted_time}]INFO clearing temp folders {select_directory_list}...")
                     for i in select_directory_list:
                         utils.empty_directory(f"template/{i}")
                 except FileNotFoundError as e:
                     pass
 
-            if live_col2.button("获取播放列表"):
+            if live_col2.button("Fetch playlist"):
                 songlist = requests.post('http://localhost:9550/get_songlist')
                 st.write(songlist.json())
 
-            if live_col3.button("清空音频播放列表"):
+            if live_col3.button("Clear audio playlist"):
                 requests.post('http://localhost:9550/clear_songlist')
-                st.success("音频播放列表已清空！")
+                st.success("Audio playlist cleared.")
 
-            if live_col4.button("查看运行状态参数"):
+            if live_col4.button("View runtime status"):
                 show_data = requests.post('http://localhost:9550/show')
                 st.write(show_data.json())
 
-        with st.expander("测试AI-VTuber"):
+        with st.expander("Test AI-VTuber"):
             selected_options = st.multiselect(
-                "选择你需要开启的模块:",
-                ["语音", "数字人驱动"]
+                "Select modules to enable:",
+                ["Voice", "Avatar Driver"]
             )
             s_m_1 = False
             s_m_2 = False
@@ -326,94 +372,92 @@ def main_page(hps,role_hps):
             role_tts_emotion = None
             tts_plan = [0,1]
             action_type = "speak"
-            st.write("当前已开启的模块:")
+            st.write("Modules enabled:")
             for select_module in selected_options:
                 st.success(select_module)
-                if "语音" == select_module:
+                if "Voice" == select_module:
                     s_m_1 = True
-                    tts_plan = st.selectbox("请选择语音合成方案:", ["1.edge-tts+svc", "2.GPT-SoVITS"], index=1)
-                elif "数字人驱动" == select_module:
+                    tts_plan = st.selectbox("Select TTS plan:", ["1.edge-tts+svc", "2.GPT-SoVITS"], index=1)
+                elif "Avatar Driver" == select_module:
                     s_m_2 = True
             if s_m_2:
-                action_type = st.radio(
-                    "请选择一个选项:",
-                    ["speak", "rhythm", "sing"]
-                )
-                st.write("您选择的选项:", action_type)
+                action_type = st.radio("Choose an action:", ["speak", "rhythm", "sing"])
+                st.write("Selected action:", action_type)
                 webrtc_streamer(
                     key="video_streamer",
                     media_stream_constraints={
                         "video": {
-                            "width": 1920,  # 设置视频宽度
-                            "height": 1080,  # 设置视频高度
-                            "frameRate": 60,  # 设置帧率
-                            "aspectRatio": 1.777777778,  # 设置宽高比（16:9）
-                            "deviceId": None  # 设置摄像头设备ID，None表示自动选择
+                            "width": 1920,  # Video width
+                            "height": 1080,  # Video height
+                            "frameRate": 60,  # Frame rate
+                            "aspectRatio": 1.777777778,  # Aspect ratio (16:9)
+                            "deviceId": None  # Auto-select camera
                         },
                         "audio": False
                     }
                 )
             role_keys_hps = utils.get_hparams_from_file("configs/json/role_setting.json").keys()
-            role = st.selectbox("请你选择聊天的角色模板:",list(role_keys_hps),index=0)
+            role = st.selectbox("Select a chat persona template:", list(role_keys_hps), index=0)
             if s_m_1:
                 if tts_plan == "2":
                     role_name = utils.load_json("configs/json/role_setting.json").get(role)["tts"]["plan_2"]["gpt_sovits"]
                     emotion_lst = requests.get(hps.api_path.gpt_sovits.url+"/character_list").json().get(role_name)
                     if emotion_lst:
-                        role_tts_emotion = st.selectbox("请选择模型说话情绪",emotion_lst)
+                        role_tts_emotion = st.selectbox("Select speaking emotion", emotion_lst)
             if s_m_2:
                 easyaivtuber_img_dir_path = role_hps.get(role).easyaivtuber_dir_path
                 if easyaivtuber_img_dir_path:
                     png_files = [f for f in os.listdir(easyaivtuber_img_dir_path) if f.endswith('.png')]
-                    easyaivtuber_img = st.selectbox("请选择主播的形象图",png_files,index=0)
+                    easyaivtuber_img = st.selectbox("Select avatar image", png_files, index=0)
             knowledge_database = hps.ai_vtuber.knowledge_database
-            select_databases = st.multiselect("请你选择参考知识库", knowledge_database)
-            if st.button("选择该角色的模板"):
+            select_databases = st.multiselect("Select reference knowledge bases", knowledge_database)
+            if st.button("Apply this persona template"):
                 data_role = {"role_key":role,"tts_plan":int(tts_plan[0]),"role_tts_emotion":role_tts_emotion,"easyaivtuber_img":easyaivtuber_img,"knowledge_databases":[database_dict["name"] for database_dict in select_databases]}
                 res = requests.post('http://localhost:9550/switch_role', json=data_role)
-                if res.status_code == 200:st.success("角色模板切换成功")
+                if res.status_code == 200:
+                    st.success("Persona template switched.")
             st.write("---")
-            st.write("本次对话")
-            if_memory = st.checkbox("是否启动AI-VTuber记忆")
+            st.write("Conversation")
+            if_memory = st.checkbox("Enable AI-VTuber memory")
             if not if_memory:if_memory = False
-            user_input = st.text_input("输入您的消息:", "")
+            user_input = st.text_input("Enter your message:", "")
             if 'memory_list' not in st.session_state:
                 st.session_state.memory_list = [{"query":"","answer":""}]
-            if st.button("发送"):
-                with st.spinner('任务运行中...'):
+            if st.button("Send"):
+                with st.spinner("Running task..."):
                     status_placeholder = st.empty()
                     data_agent_to_do = {"content": user_input,"memory":if_memory}
                     res = requests.post(f'http://localhost:9550/agent_to_do', json=data_agent_to_do).json()
-                    st.write("参考信息:", res["refer_information"])
+                    st.write("Reference info:", res["refer_information"])
                     st.session_state.memory_list.append({"query":user_input,"answer":res["content"]})
                     stream_bar = st.progress(0)
                     placeholder = st.empty()
-                    # 模拟流式输出
-                    status_placeholder.text("正在流式输出！")
+                    # Simulate streaming output
+                    status_placeholder.text("Streaming output...")
                     for i in range(len(res["content"])):
-                        # 更新容器中的文本
+                        # Update the placeholder text
                         placeholder.text_area("AI-Vtuber:", value=res["content"][:i + 1], key=i)
                         stream_bar.progress((i+1)/len(res["content"]))
                         time.sleep(0.01)
                     if res["songlist"]:
-                        st.write("当前播放列表:",res["songlist"])
+                        st.write("Current playlist:", res["songlist"])
                     if s_m_1:
                         data_tts = {"tts_plan": int(tts_plan[0]), "text": res["content"], "AudioCount": 1}
                         response = requests.post('http://localhost:9550/tts', json=data_tts).json()
-                        status_placeholder.text("已发送语音合成指令！")
+                        status_placeholder.text("TTS request sent.")
                         data_tts_play = {"wav_path": response["path"]}
                         if s_m_2:
                             data_action = {"type": action_type, "speech_path": data_tts_play["wav_path"]}
                             response = requests.post("http://127.0.0.1:7888/alive", json=data_action)
-                            status_placeholder.text("已发送数字人动作参数！")
+                            status_placeholder.text("Avatar motion request sent.")
                             if response.status_code == 200:
-                                st.success("INFO:easy_ai_vtuber_api请求成功")
+                                st.success("INFO: easy_ai_vtuber_api request succeeded.")
                         else:
                             requests.post('http://localhost:9550/mpv_play', json=data_tts_play)
-            memory_list_choose = st.sidebar.selectbox("选择聊天记录:", st.session_state.memory_list,index=0)
+            memory_list_choose = st.sidebar.selectbox("Select chat history:", st.session_state.memory_list, index=0)
             if memory_list_choose:
                 st.write("---")
-                st.write("历史回复")
+                st.write("Previous reply")
                 placeholder_user = st.empty()
                 placeholder_vtuber = st.empty()
                 for i in range(len(memory_list_choose["query"])):
@@ -422,63 +466,80 @@ def main_page(hps,role_hps):
                 for j in range(len(memory_list_choose["answer"])):
                     placeholder_vtuber.text_area("AI-Vtuber:", value=memory_list_choose["answer"][:j + 1], key=f"AI-Vtuber_{j}")
                     time.sleep(0.001)
-        with st.expander("实用小工具"):
-            t1,t2,t3,t4,t5,t6,t7 = st.tabs(["下载","语音识别","人声分离","语音合成","语音转换","AI画画","图片去背景"])
+        with st.expander("Utilities"):
+            t1, t2, t3, t4, t5, t6, t7 = st.tabs(
+                [
+                    "Downloader",
+                    "Speech-to-Text",
+                    "Vocal Separation",
+                    "Text-to-Speech",
+                    "Voice Conversion",
+                    "AI Art",
+                    "Background Removal",
+                ]
+            )
             with t1:
-                st.caption("本工具用于下载指定链接中的视频/音频文件")
+                st.caption("Download audio/video files from a provided link.")
                 st.write("---")
                 if "download_files" not in st.session_state:
                     st.session_state.download_files = None
                 c1,c2,c3 =st.columns(3)
                 d_url,d_index,d_format,download_list = None,1,"wav",None
                 with c1:
-                    d_url = st.text_input("请输入网址链接（必填）：",placeholder="https://www.bilibili.com/video/BV1U4421f7Uj")
+                    d_url = st.text_input(
+                        "Enter a URL (required):",
+                        placeholder="https://www.youtube.com/watch?v=example",
+                    )
                 with c2:
-                    d_index = st.text_input("请输入下载序号（选填）：",placeholder="用于下载指定的分p，默认为第一个")
+                    d_index = st.text_input(
+                        "Segment index (optional):",
+                        placeholder="For multi-part videos; defaults to first part.",
+                    )
                 with c3:
-                    d_format = st.selectbox("文件类型",["wav","mp4"],index=0)
-                if st.button("开始下载"):
+                    d_format = st.selectbox("File type", ["wav", "mp4"], index=0)
+                if st.button("Start download"):
                     if d_url:
                         download_data = {"url":d_url,"index":d_index,"format":d_format}
-                        st.write("本次请求:",download_data)
+                        st.write("Request payload:", download_data)
                         download_list = requests.post('http://localhost:9550/tool/download_from_url', json=download_data).json()
                         if download_list:
                             st.session_state.download_files = download_list
                 if st.session_state.download_files:
                     if d_format == "wav":
-                        select_audio = st.selectbox("选中的音频",st.session_state.download_files,index=0)
+                        select_audio = st.selectbox("Selected audio", st.session_state.download_files, index=0)
                         st.audio(select_audio)
-                        if st.button("删除该音频"):
+                        if st.button("Delete audio"):
                             if os.path.exists(select_audio):
                                 os.remove(select_audio)
                                 st.session_state.download_files = None
-                                st.success(f"文件 {select_audio} 已被删除。")
+                                st.success(f"File {select_audio} deleted.")
                             else:
-                                st.warning(f"文件 {select_audio} 不存在。")
+                                st.warning(f"File {select_audio} not found.")
                     elif d_format == "mp4":
-                        select_video = st.selectbox("选中的视频",st.session_state.download_files,index=0)
+                        select_video = st.selectbox("Selected video", st.session_state.download_files, index=0)
                         st.video(select_video)
-                        if st.button("删除该视频"):
+                        if st.button("Delete video"):
                             if os.path.exists(select_video):
                                 os.remove(select_video)
                                 st.session_state.download_files = None
-                                st.success(f"文件 {select_video} 已被删除。")
+                                st.success(f"File {select_video} deleted.")
                             else:
-                                st.warning(f"文件 {select_video} 不存在。")
-                if st.button("打开缓存文件夹"):
+                                st.warning(f"File {select_video} not found.")
+                if st.button("Open cache folder"):
                     subprocess.run(['explorer', os.path.abspath(os.path.join(project_root, "template/downloads"))])
             with t2:
                 try:
                     audio_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "flac"])
                     if audio_file is not None:
                         st.audio(audio_file.read(), format=audio_file.type)
-                        language = st.selectbox("语言",["自动","zh","en","ja"],index=0)
-                        if language == "自动":language =None
+                        language = st.selectbox("Language", ["Auto", "zh", "en", "ja"], index=0)
+                        if language == "Auto":
+                            language = None
                         file_path = os.path.join("template/uploads", audio_file.name)
                         with open(file_path, "wb") as f:
                             f.write(audio_file.getbuffer())
-                        if st.button("语音识别"):
-                            with st.spinner("语音识别中，请耐心等待......"):
+                        if st.button("Transcribe"):
+                            with st.spinner("Transcribing, please wait..."):
                                 data = {"input_path": file_path,"language":language}
                                 res = requests.post(f'http://localhost:9550/tool/faster_whisper', json=data)
                                 st.write(res.json()["text"])
@@ -489,27 +550,27 @@ def main_page(hps,role_hps):
                     folder_contents = os.listdir("runtime\miniconda3\envs")
                     envs_name = [f for f in folder_contents if
                                  os.path.isdir(os.path.join("runtime\miniconda3\envs", f))]
-                    uvr5_name = st.selectbox("选择虚拟环境：", envs_name, index=len(envs_name)-1)
-                    device = st.selectbox("运行设备:",["cuda","cpu"])
-                    is_half_precision = st.selectbox("半精度计算:",[True,False])
-                    port = st.number_input("运行端口:",value=9660)
-                    if_share = st.selectbox("是否启动一个在线的端口:",[True,False],index=1)
+                    uvr5_name = st.selectbox("Select environment:", envs_name, index=len(envs_name)-1)
+                    device = st.selectbox("Device:", ["cuda", "cpu"])
+                    is_half_precision = st.selectbox("Half precision:", [True, False])
+                    port = st.number_input("Port:", value=9660)
+                    if_share = st.selectbox("Share public link:", [True, False], index=1)
                     b_col1,b_col2 = st.columns(2)
-                    if b_col1.button("打开uvr5的webui"):
+                    if b_col1.button("Open UVR5 web UI"):
                         command = f"{project_root}\\runtime\\miniconda3\\envs\\{uvr5_name}\\python.exe tools/uvr5/webui.py {device} {is_half_precision} {port} {if_share}"
                         subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
-                    if b_col2.button("打开uvr5输出文件夹"):
+                    if b_col2.button("Open UVR5 output folder"):
                         subprocess.run(['explorer', os.path.abspath(os.path.join(project_root, "template/uvr5_opt"))])
                 except Exception as e:
                     st.error(e)
             with t4:
                 try:
-                    tts_plan = st.selectbox("请选择语音合成方案:", ["1.edge-tts+svc", "2.GPT-SoVITS"], index=1,key="tts")
-                    text = st.text_input("请输入需要合成的文本:")
+                    tts_plan = st.selectbox("Select TTS plan:", ["1.edge-tts+svc", "2.GPT-SoVITS"], index=1, key="tts")
+                    text = st.text_input("Text to synthesize:")
                     is_stream = False
                     if int(tts_plan[0]) == 2:
-                        is_stream = st.checkbox("启用流式合成")
-                    if st.button("语音合成",key=f"tts_{1}"):
+                        is_stream = st.checkbox("Enable streaming synthesis")
+                    if st.button("Synthesize", key=f"tts_{1}"):
                         if not is_stream:
                             data_tts = {"tts_plan": int(tts_plan[0]), "text": text, "AudioCount": 1}
                             response = requests.post('http://localhost:9550/tts', json=data_tts).json()
@@ -530,7 +591,7 @@ def main_page(hps,role_hps):
                             for data in response.iter_content(chunk_size=1024):
                                 stream.write(data)
                                 audio_buffer.write(data)
-                            audio_buffer.seek(0)  # 重置buffer的读写位置到开始
+                            audio_buffer.seek(0)  # Reset buffer pointer
                             st.audio(audio_buffer, format='audio/wav')
                             stream.stop_stream()
                             stream.close()
@@ -538,28 +599,28 @@ def main_page(hps,role_hps):
                 except Exception as e:
                     st.error(e)
             with t5:
-                st.caption("本功能支持用户上传一段音频进行语音转换")
-                audio_file = st.file_uploader("上传音频文件", type=["wav", "mp3", "ogg"])
+                st.caption("Upload an audio clip for voice conversion.")
+                audio_file = st.file_uploader("Upload audio file", type=["wav", "mp3", "ogg"])
                 if audio_file is not None:
                     file_content = audio_file.read()
                     file_path = os.path.join("template/uploads", audio_file.name)
                     with open(file_path, "wb") as file:
                         file.write(file_content)
                     st.audio(f"template/uploads/{audio_file.name}")
-                    if st.button("进行语音转换"):
+                    if st.button("Run voice conversion"):
                         from func.tts import svc_api_request
                         svc_api_request.request_api(project_root,os.path.join(project_root,f"template/uploads/{audio_file.name}"),"vc")
-                        st.success("语音转换成功")
+                        st.success("Voice conversion succeeded.")
                     if os.path.exists(f"template/tts/vc.wav"):
                         st.audio(f"template/tts/vc.wav", format="audio/wav")
             with t6:
                 from func.t2img import sd_api
                 try:
-                    sd_ui = st.selectbox("请选择sd",["webui","comfyui"])
+                    sd_ui = st.selectbox("Select SD UI", ["webui", "comfyui"])
                     with open("configs/json/bat_start.json", 'r', encoding='utf-8') as file:
                         data = json.load(file)
                     bat_names = [item['bat_name'] for item in data if "bat_name" in item]
-                    sd_env = st.selectbox("请先选择sd的运行脚本",bat_names)
+                    sd_env = st.selectbox("Select the SD launch script", bat_names)
                     sd_path = [item["bat_path"] for item in data if item["bat_name"] in [sd_env]]
                     directory_path = os.path.dirname(os.path.abspath(sd_path[0]))
                     st.write(directory_path)
@@ -568,16 +629,20 @@ def main_page(hps,role_hps):
                     if 'prompt' not in st.session_state:
                         st.session_state.prompt = [""]
                     d_col1,d_col2 = st.columns(2)
-                    text = d_col1.text_input("请输入绘画要求")
-                    e_prompt = d_col2.text_input("请输入提示词",placeholder="可以手动输入或者补充提示词")
+                    text = d_col1.text_input("Describe what to draw")
+                    e_prompt = d_col2.text_input("Extra prompt", placeholder="Optional extra prompt")
                     p_col1,p_col2 = st.columns(2)
-                    if p_col1.button("自动翻译提示词"):
+                    if p_col1.button("Auto-translate prompt"):
                         payload = json.dumps({
                             "model": "model",
                             "messages": [
                                 {
                                     "role": "system",
-                                    "content": "根据用户的要求拆解成相应的英文prompt，其应该由简短的英文单词或英语短句组成，输出格式样例:a girl,pink hair,black shoes,long hair,young,lovely。请注意，人名与实际内容无关无需翻译出来，只输出英文单词，不要输出多余的内容，禁止输入出英文以外的语言！"
+                                    "content": (
+                                        "Convert the user request into concise English prompt tokens. "
+                                        "Example output: a girl,pink hair,black shoes,long hair,young,lovely. "
+                                        "Output English words only, no extra text."
+                                    )
                                 },
                                 {
                                     "role": "user",
@@ -597,22 +662,22 @@ def main_page(hps,role_hps):
                     if e_prompt != st.session_state.prompt[-1]:
                         st.session_state.prompt.append(f",{e_prompt}")
                     if st.session_state.prompt:
-                        st.write(f"正向提示词:{st.session_state.prompt}")
-                    if p_col2.button("清空提示词缓存"):
+                        st.write(f"Positive prompt: {st.session_state.prompt}")
+                    if p_col2.button("Clear prompt cache"):
                         st.session_state.prompt = [""]
                     if sd_ui == "webui":
                         draw_cols1,draw_cols2,draw_cols3 = st.columns(3)
                         draw_cols4,draw_cols5,draw_cols6 = st.columns(3)
-                        img_name = draw_cols1.text_input("保存图片名称",placeholder="test",key="test")
-                        mode = draw_cols2.selectbox("绘图模式",sd_api.mode_list)
-                        sd_model_checkpoint = draw_cols3.selectbox("基座模型",models_names)
-                        negative_prompt = draw_cols4.text_input("负面提示词",placeholder=sd_api.negative_prompt,key=sd_api.negative_prompt)
-                        steps = draw_cols5.number_input("步数",min_value=0,max_value=100,value=sd_api.steps)
-                        sampler_name = draw_cols6.selectbox("采样器",sd_api.sampler_name)
-                        if st.button("开始生成"):
+                        img_name = draw_cols1.text_input("Image filename", placeholder="test", key="test")
+                        mode = draw_cols2.selectbox("Render mode", sd_api.mode_list)
+                        sd_model_checkpoint = draw_cols3.selectbox("Base model", models_names)
+                        negative_prompt = draw_cols4.text_input("Negative prompt", placeholder=sd_api.negative_prompt, key=sd_api.negative_prompt)
+                        steps = draw_cols5.number_input("Steps", min_value=0, max_value=100, value=sd_api.steps)
+                        sampler_name = draw_cols6.selectbox("Sampler", sd_api.sampler_name)
+                        if st.button("Generate"):
                             code = sd_api.sd_webui_generate_image("".join(st.session_state.prompt), img_name, mode, negative_prompt, steps, sampler_name, sd_model_checkpoint)
                             if code == 200:
-                                st.image(f"template/img/{img_name}.png", caption='AI生成', use_column_width=True)
+                                st.image(f"template/img/{img_name}.png", caption="AI generated", use_column_width=True)
                                 st.session_state.prompt = [""]
                             else:
                                 st.error(code)
@@ -622,15 +687,15 @@ def main_page(hps,role_hps):
                             file_content = uploaded_file.getvalue()
                             json_string = file_content.decode('utf-8')
                             data = json.loads(json_string)
-                            if st.button("开始生成"):
+                            if st.button("Generate"):
                                 images_name_list = sd_api.sd_comfyui_generate_image("".join(st.session_state.prompt),data)
-                                st.image(f"{images_name_list[0]}", caption='AI生成', use_column_width=True)
+                                st.image(f"{images_name_list[0]}", caption="AI generated", use_column_width=True)
                         else:
                             st.write("Please upload a JSON file.")
                 except Exception as e:
                     st.error(e)
             with t7:
-                uploaded_file = st.file_uploader("选择一张图片上传...", type=["jpg","png"])
+                uploaded_file = st.file_uploader("Upload an image...", type=["jpg", "png"])
                 if uploaded_file is not None:
                     file_bytes = uploaded_file.read()
                     save_path = 'template/img'
@@ -640,59 +705,60 @@ def main_page(hps,role_hps):
                     with open(save_path_file, 'wb') as file:
                         file.write(file_bytes)
                     try:
-                        if st.button("开始去背景"):
+                        if st.button("Remove background"):
                             url = "http://localhost:7000/api/remove"
                             with open(save_path_file, 'rb') as file:
                                 response = requests.post(url, files={'file': file})
                             with open(os.path.join(save_path,"rembg.png"), 'wb') as output_file:
                                 output_file.write(response.content)
-                            st.success("背景已扣除")
+                            st.success("Background removed.")
                             st.image(os.path.join(save_path,"rembg.png"), caption='rembg', use_column_width=True)
                     except Exception as e:
-                        st.error(f"请确保服务正常启动，{e}")
+                        st.error(f"Ensure the service is running: {e}")
 
-    elif page == "个性定制":
-        choose = st.selectbox("请选择个性定制方向:", ["认知定制", "功能定制"], index=0)
-        if choose == "认知定制":
-            y_please = st.selectbox("请选择:", ["人设定制","neo4j数据库操作台(需要启动neo4j数据库)"], index=0)
+    elif page == "Personalization":
+        choose = st.selectbox("Personalization focus:", ["Knowledge", "Features"], index=0)
+        if choose == "Knowledge":
+            y_please = st.selectbox("Select:", ["Persona", "Neo4j Console (requires Neo4j)"], index=0)
             st.write("---")
-            if y_please == "人设定制":
-                t1,t2 = st.tabs(["config配置文件", "知识库定制"])
+            if y_please == "Persona":
+                t1, t2 = st.tabs(["Config file", "Knowledge base"])
                 with t1:
-                    col_1,col_2 = st.columns(2)
+                    col_1, col_2 = st.columns(2)
                     role_keys_hps = role_hps.keys()
-                    if_del = col_1.selectbox("是否需要删除角色模板:", [True,False], index=1)
+                    if_del = col_1.selectbox("Delete a persona template?", [True, False], index=1)
                     if if_del:
-                        role_del = col_2.selectbox("请你选择待删除的角色模板:", list(role_keys_hps), index=0)
-                        if role_del == "默认模板":
-                            st.error("禁止删除默认模板")
+                        role_del = col_2.selectbox("Select a template to delete:", list(role_keys_hps), index=0)
+                        if role_del == "Default Template":
+                            st.error("The default template cannot be deleted.")
                         else:
-                            if st.button("删除角色模板") and role_del != "默认模板":
+                            if st.button("Delete persona template") and role_del != "Default Template":
                                 role_mod = utils.load_json("configs/json/role_setting.json")
                                 del role_mod[role_del]
                                 utils.write_json(role_mod, "configs/json/role_setting.json")
-                                st.success("角色模板删除成功")
+                                st.success("Persona template deleted.")
                     edge_tts_voice, so_vits_svc_model, so_vits_svc_config, gpt_sovits_model = "", "", "", ""
                     from func.tts import tts_voices
                     col1, col2, col3, col4 = st.columns(4)
-                    name_input = col1.text_input("姓名",placeholder="默认模板")
-                    if not name_input:name_input="默认模板"
+                    name_input = col1.text_input("Name", placeholder="Default Template")
+                    if not name_input:
+                        name_input = "Default Template"
                     if role_hps.get(name_input) == None:
-                        role_json = utils.get_hparams_from_dict(role_hps.get("默认模板"))
+                        role_json = utils.get_hparams_from_dict(role_hps.get("Default Template"))
                     else:
                         role_json = utils.get_hparams_from_dict(role_hps.get(name_input))
-                    sex_input = col2.text_input("性别",placeholder=role_json.sex)
-                    age_input = col3.text_input("年龄",placeholder=role_json.age)
-                    emotion_input = col4.text_input("情绪值",placeholder=role_json.emotion)
-                    setting_input = st.text_input("角色设定",placeholder=role_json.setting)
+                    sex_input = col2.text_input("Gender", placeholder=role_json.sex)
+                    age_input = col3.text_input("Age", placeholder=role_json.age)
+                    emotion_input = col4.text_input("Emotion score", placeholder=role_json.emotion)
+                    setting_input = st.text_input("Persona description", placeholder=role_json.setting)
                     emo_col1, emo_col2, emo_col3, emo_col4, emo_col5 = st.columns(5)
                     emotional_display_prompt_list = role_json.emotional_display
-                    emotional_display_prompt_list[0] = emo_col1.text_input("0.悲伤",placeholder=role_json.emotional_display[0])
-                    emotional_display_prompt_list[1] = emo_col2.text_input("1.焦虑",placeholder=role_json.emotional_display[1])
-                    emotional_display_prompt_list[2] = emo_col3.text_input("2.平静",placeholder=role_json.emotional_display[2])
-                    emotional_display_prompt_list[3] = emo_col4.text_input("3.开心",placeholder=role_json.emotional_display[3])
-                    emotional_display_prompt_list[4] = emo_col5.text_input("4.激动",placeholder=role_json.emotional_display[4])
-                    tts_plan = st.selectbox("请选择语音合成方案",["plan_1:edge-tts+svc","plan_2:gpt-sovits"],index=0)[0:6]
+                    emotional_display_prompt_list[0] = emo_col1.text_input("0. Sad", placeholder=role_json.emotional_display[0])
+                    emotional_display_prompt_list[1] = emo_col2.text_input("1. Anxious", placeholder=role_json.emotional_display[1])
+                    emotional_display_prompt_list[2] = emo_col3.text_input("2. Calm", placeholder=role_json.emotional_display[2])
+                    emotional_display_prompt_list[3] = emo_col4.text_input("3. Happy", placeholder=role_json.emotional_display[3])
+                    emotional_display_prompt_list[4] = emo_col5.text_input("4. Excited", placeholder=role_json.emotional_display[4])
+                    tts_plan = st.selectbox("Select TTS plan", ["plan_1:edge-tts+svc", "plan_2:gpt-sovits"], index=0)[0:6]
                     if tts_plan == "plan_1":
                         col5, col6 = st.columns(2)
                         edge_tts_voice = role_json.tts.plan_1.edge_tts
@@ -700,19 +766,19 @@ def main_page(hps,role_hps):
                             default_index = tts_voices.SUPPORTED_LANGUAGES.index(edge_tts_voice)
                         else:
                             default_index = 0
-                        edge_tts_voice = col5.selectbox("请选择edge-tts音色:", tts_voices.SUPPORTED_LANGUAGES, index=default_index)
-                        text = col6.text_input("请输入音色测试语句:","")
-                        if st.button("edge-tts音色测试"):
+                        edge_tts_voice = col5.selectbox("Edge TTS voice:", tts_voices.SUPPORTED_LANGUAGES, index=default_index)
+                        text = col6.text_input("Test phrase:", "")
+                        if st.button("Test edge-tts voice"):
                             tts_voices.to_edge_tts(text,edge_tts_voice,"template/tts/demo.mp3")
                             st.audio("template/tts/demo.mp3", format='audio/mp3')
                         col7, col8 = st.columns(2)
-                        so_vits_svc_model = col7.text_input("输入so-vits-svc模型绝对路径",placeholder=role_json.tts.plan_1.so_vits_svc)
-                        so_vits_svc_config = col8.text_input("输入so-vits-svc配置文件绝对路径",placeholder=role_json.tts.plan_1.so_vits_svc_config)
+                        so_vits_svc_model = col7.text_input("so-vits-svc model path", placeholder=role_json.tts.plan_1.so_vits_svc)
+                        so_vits_svc_config = col8.text_input("so-vits-svc config path", placeholder=role_json.tts.plan_1.so_vits_svc_config)
                     elif tts_plan == "plan_2":
                         res = requests.get(hps.api_path.gpt_sovits.url+"/character_list")
-                        gpt_sovits_model = st.selectbox("选择gpt-sovits模型",list(res.json().keys()))
+                        gpt_sovits_model = st.selectbox("Select gpt-sovits model", list(res.json().keys()))
                     easyaivtuber_img_dir_path = role_json.easyaivtuber_dir_path
-                    easyaivtuber_img_path = st.text_input("请输入easyaivtuber数字人形象路径(.png)",placeholder=easyaivtuber_img_dir_path)
+                    easyaivtuber_img_path = st.text_input("EasyAIVtuber avatar image path (.png)", placeholder=easyaivtuber_img_dir_path)
                     if not sex_input:sex_input=role_json.sex
                     if not age_input:age_input=role_json.age
                     if not emotion_input:emotion_input=role_json.emotion
@@ -723,77 +789,77 @@ def main_page(hps,role_hps):
                     if not gpt_sovits_model:gpt_sovits_model=role_json.tts.plan_2.gpt_sovits
                     if not easyaivtuber_img_path:easyaivtuber_img_path=role_json.easyaivtuber_dir_path
                     st.write("---")
-                    if st.button("保存角色配置"):
+                    if st.button("Save persona settings"):
                         st.write(name_input)
-                        if name_input != "默认模板":
+                        if name_input != "Default Template":
                             role_hps = utils.load_json("configs/json/role_setting.json")
-                            role_hps.get("默认模板")["name"] = name_input
-                            role_hps.get("默认模板")["setting"] = setting_input
-                            role_hps.get("默认模板")["sex"] = sex_input
-                            role_hps.get("默认模板")["age"] = age_input
-                            role_hps.get("默认模板")["emotional_display"] = emotional_display_prompt_list
-                            role_hps.get("默认模板")["emotion"] = emotion_input
-                            role_hps.get("默认模板")["tts"]["plan_1"]["edge_tts"] = edge_tts_voice
-                            role_hps.get("默认模板")["tts"]["plan_1"]["so_vits_svc"] = so_vits_svc_model
-                            role_hps.get("默认模板")["tts"]["plan_1"]["so_vits_svc_config"] = so_vits_svc_config
-                            role_hps.get("默认模板")["tts"]["plan_2"]["gpt_sovits"] = gpt_sovits_model
-                            role_hps.get("默认模板")["easyaivtuber_dir_path"] = easyaivtuber_img_path
+                            role_hps.get("Default Template")["name"] = name_input
+                            role_hps.get("Default Template")["setting"] = setting_input
+                            role_hps.get("Default Template")["sex"] = sex_input
+                            role_hps.get("Default Template")["age"] = age_input
+                            role_hps.get("Default Template")["emotional_display"] = emotional_display_prompt_list
+                            role_hps.get("Default Template")["emotion"] = emotion_input
+                            role_hps.get("Default Template")["tts"]["plan_1"]["edge_tts"] = edge_tts_voice
+                            role_hps.get("Default Template")["tts"]["plan_1"]["so_vits_svc"] = so_vits_svc_model
+                            role_hps.get("Default Template")["tts"]["plan_1"]["so_vits_svc_config"] = so_vits_svc_config
+                            role_hps.get("Default Template")["tts"]["plan_2"]["gpt_sovits"] = gpt_sovits_model
+                            role_hps.get("Default Template")["easyaivtuber_dir_path"] = easyaivtuber_img_path
                             role_dict = utils.load_json("configs/json/role_setting.json")
-                            role_dict[name_input] = role_hps.get("默认模板")
+                            role_dict[name_input] = role_hps.get("Default Template")
                             utils.write_json(role_dict,"configs/json/role_setting.json")
-                            st.success("人设模型已更新")
+                            st.success("Persona settings updated.")
                         else:
-                            st.error("禁止修改默认模板")
+                            st.error("The default template cannot be modified.")
                 with t2:
-                    st.write("**使用本功能制作知识库后需要手动重启flask后端，以便更新数据库配置信息。**")
+                    st.write("**Restart the Flask backend after updating knowledge bases to reload configs.**")
                     st.write("---")
                     knowledge_databases = hps.ai_vtuber.knowledge_database
-                    select_database = st.selectbox("请选择知识库:", knowledge_databases, index=0)
+                    select_database = st.selectbox("Select knowledge base:", knowledge_databases, index=0)
                     if select_database:
-                        st.info(f"当前知识库: {select_database.get('name',None)}")
-                    introduction = st.text_input("添加当前知识库的介绍:")
+                        st.info(f"Current knowledge base: {select_database.get('name', None)}")
+                    introduction = st.text_input("Add a description for this knowledge base:")
                     d_col1, d_col_2 = st.columns(2)
-                    if d_col1.button("保存配置"):
+                    if d_col1.button("Save configuration"):
                         config_data = utils.load_json("configs/json/config.json")
                         config_data["ai_vtuber"]["knowledge_database"] = [
                             {k: introduction if k == f'{list(select_database.keys())[0]}' else v for k, v in d.items()}
                             for d in config_data["ai_vtuber"]["knowledge_database"]
                         ]
                         utils.write_json(config_data, "configs/json/config.json")
-                        st.success("知识库已更新")
-                    with st.expander("定制歌库"):
+                        st.success("Knowledge base updated.")
+                    with st.expander("Song library"):
                         try:
-                            data = pd.read_csv("configs/csv/歌库.csv", encoding="gbk")
+                            data = pd.read_csv("configs/csv/song_library.csv", encoding="gbk")
                             edited_data = st.data_editor(data)
-                            if st.button("保存修改"):
+                            if st.button("Save changes"):
                                 edited_csv = edited_data.to_csv(index=False)
                                 st.download_button(
-                                    label="下载修改的歌库csv",
+                                    label="Download updated song library CSV",
                                     data=edited_csv,
-                                    file_name="edited_歌库.csv",
+                                    file_name="edited_song_library.csv",
                                     mime="text/csv"
                                 )
-                            introduction = st.text_input("添加歌库的介绍:", key="introduction")
-                            if st.button("更新歌库（需要启动neo4j服务）"):
-                                with st.spinner('任务运行中...'):
+                            introduction = st.text_input("Song library description:", key="introduction")
+                            if st.button("Update song library (requires Neo4j)"):
+                                with st.spinner("Running task..."):
                                     from func.Neo4j_Database import make_n4j_database
                                     from func.Neo4j_Database import to_neo4j
                                     neo = to_neo4j.Neo4jHandler("configs/json/config.json")
                                     neo.connect_neo4j_database()
-                                    neo.delete_nodes_for_label("歌库")
+                                    neo.delete_nodes_for_label("Song Library")
                                     make_n4j_database.song_dict_to_neo4j(song_dict_path="data/json/song_dict.json",
-                                                                         song_csv_path="configs/csv/歌库.csv",
+                                                                         song_csv_path="configs/csv/song_library.csv",
                                                                          config_path="configs/json/config.json")
                                     config_data = utils.load_json("configs/json/config.json")
                                     config_data["ai_vtuber"]["knowledge_database"].append(
-                                        {"name": f"歌库", "introduction": introduction, "plan": 0})
+                                        {"name": "Song Library", "introduction": introduction, "plan": 0})
                                     utils.write_json(config_data, "configs/json/config.json")
-                                    st.success("更新成功")
+                                    st.success("Updated successfully.")
                         except Exception as e:
                             st.error(e)
 
-                    with st.expander("csv转neo4j"):
-                        uploaded_file = st.file_uploader("可以用来在线编辑一个csv文件", type="csv")
+                    with st.expander("CSV to Neo4j"):
+                        uploaded_file = st.file_uploader("Upload a CSV file to edit", type="csv")
                         if uploaded_file is not None:
                             data = pd.read_csv(uploaded_file, encoding="gbk")
                             edited_data = st.data_editor(data)
@@ -805,35 +871,35 @@ def main_page(hps,role_hps):
                                     file_name="edited_data.csv",
                                     mime="text/csv"
                                 )
-                        if st.button("csv转neo4j"):
+                        if st.button("Convert CSV to Neo4j"):
                             from func.Neo4j_Database import make_n4j_database
                             make_n4j_database.cognition_to_neo4j(cognition_dict_path = "data/json/cognition.json",cognition_csv_path = "configs/csv/cognition.csv",config_path = "configs/json/config.json")
-                            st.success("知识库建立完毕")
+                            st.success("Knowledge base created.")
 
-                    with st.expander("txt转neo4j/chroma"):
-                        uploaded_file = st.file_uploader("上传TXT文件", type="txt")
+                    with st.expander("TXT to Neo4j/Chroma"):
+                        uploaded_file = st.file_uploader("Upload a TXT file", type="txt")
                         if uploaded_file is not None:
                             if not os.path.exists(os.path.join("template/txt", uploaded_file.name)):
                                 with open(os.path.join("template/txt", uploaded_file.name), "wb") as f:
                                     f.write(uploaded_file.getbuffer())
                             file_content = uploaded_file.read().decode("utf-8")
-                            d_select = st.selectbox("请选择知识库制作方案:",["知识图谱","向量数据库"],index=0)
-                            if d_select == "知识图谱":
-                                s_select = st.selectbox("请选择切片方式",["按字数切分","按qa行分割"])
-                                if s_select == "按字数切分":
-                                    segment_number = st.slider('选择一个数字:', 0, 1000, value = 100)
+                            d_select = st.selectbox("Select knowledge base method:", ["Knowledge Graph", "Vector Database"], index=0)
+                            if d_select == "Knowledge Graph":
+                                s_select = st.selectbox("Select segmentation method", ["By length", "By QA lines"])
+                                if s_select == "By length":
+                                    segment_number = st.slider("Choose a number:", 0, 1000, value=100)
                                     segments = utils.split_text_by_length(file_content, segment_number)
-                                elif s_select == "按qa行分割":
+                                elif s_select == "By QA lines":
                                     segments = utils.read_qa_from_txt(os.path.join("template/txt", uploaded_file.name))
                                     segments = [segment['question']+segment['answer'] for segment in segments]
-                                st.write("切片:", segments)
+                                st.write("Segments:", segments)
                                 information_extraction = []
                                 node_name_col1,introduction_col2 = st.columns(2)
-                                node_name = node_name_col1.text_input("请输入本次学习的标签:",key="node_name")
-                                if st.button("开始信息抽取"):
+                                node_name = node_name_col1.text_input("Learning label:", key="node_name")
+                                if st.button("Start extraction"):
                                     if not introduction:introduction = ""
-                                    t_ = 0  # 成功计数器
-                                    e_ = 0  # 错误计数器
+                                    t_ = 0  # Success count
+                                    e_ = 0  # Error count
                                     total_segments = len(segments)
                                     progress = st.progress(0)
                                     for i, segment in enumerate(segments, 1):
@@ -855,33 +921,33 @@ def main_page(hps,role_hps):
                                     with open('template/json/error_log.json', 'w', encoding='utf-8') as f:
                                         f.write(error_log_json_string)
                                     with open('template/txt/error_log.txt', 'a', encoding='utf-8') as f:
-                                        if s_select == "按qa行分割":
+                                        if s_select == "By QA lines":
                                             for qa in information_extraction:
                                                 f.write(qa)
                                         else:
                                             for qa in information_extraction:
                                                 f.write(qa)
-                                    st.write(f"成功处理了 {t_} 个段，{e_} 个段处理出错。")
-                            elif d_select == "向量数据库":
-                                segment_number = st.slider('选择一个数字:', 0, 1000, value=100)
+                                    st.write(f"Processed {t_} segments successfully, {e_} failed.")
+                            elif d_select == "Vector Database":
+                                segment_number = st.slider("Choose a number:", 0, 1000, value=100)
                                 segments = utils.split_text_by_length(file_content, segment_number)
-                                st.write("切片:", segments)
+                                st.write("Segments:", segments)
                                 node_name_col1, introduction_col2 = st.columns(2)
-                                node_name = node_name_col1.text_input("请输入本次学习的标签:", key="node_name")
-                                if st.button("生成向量数据库"):
+                                node_name = node_name_col1.text_input("Learning label:", key="node_name")
+                                if st.button("Generate vector database"):
                                     data_dict = {"uploaded_file_name":uploaded_file.name,"node_name":node_name,"segment_number":segment_number,"introduction":introduction}
                                     response = requests.post('http://localhost:9550/tool/information_to_chroma', json=data_dict).json()
                                     if response["status_code"] == 200:
-                                        st.success("存储完毕")
+                                        st.success("Stored successfully.")
                                     else:
-                                        st.error("出现异常")
+                                        st.error("An error occurred.")
 
                         else:
-                            st.text("请上传一个TXT文件")
-                    expander_del = st.expander("删除指定知识库（节点标签组）")
-                    expander_del.header("删除指定知识库（节点标签组）")
-                    label_name = expander_del.text_input("请输入需要删除的知识库（节点标签组）:")
-                    if expander_del.button("删除该知识库（节点标签组）"):
+                            st.text("Please upload a TXT file.")
+                    expander_del = st.expander("Delete knowledge base (label group)")
+                    expander_del.header("Delete knowledge base (label group)")
+                    label_name = expander_del.text_input("Label to delete:")
+                    if expander_del.button("Delete knowledge base"):
                         from func.Neo4j_Database import to_neo4j
                         neo = to_neo4j.Neo4jHandler("configs/json/config.json")
                         neo.connect_neo4j_database()
@@ -889,9 +955,9 @@ def main_page(hps,role_hps):
                         config_data = utils.load_json("configs/json/config.json")
                         config_data["ai_vtuber"]["knowledge_database"] = [d for d in config_data["ai_vtuber"]["knowledge_database"] if label_name != d["name"]]
                         utils.write_json(config_data, "configs/json/config.json")
-                        st.success("删除成功")
-                    with st.expander("测试"):
-                        uploaded_file = st.file_uploader("上传测试TXT文件", type="txt")
+                        st.success("Deleted successfully.")
+                    with st.expander("Test"):
+                        uploaded_file = st.file_uploader("Upload test TXT file", type="txt")
                         if uploaded_file is not None:
                             question_numbers = []
                             similarities_used = []
@@ -900,10 +966,10 @@ def main_page(hps,role_hps):
                                 with open(os.path.join("template/txt", uploaded_file.name), "wb") as f:
                                     f.write(uploaded_file.getbuffer())
                             segments = utils.read_qa_from_txt(os.path.join("template/txt", uploaded_file.name))
-                            if st.button("开始测试"):
+                            if st.button("Run test"):
                                 save_json = []
                                 progress_bar = st.progress(0)
-                                with tqdm(total=len(segments), desc="正在测试中", unit="问题", ascii=False, ncols=80) as pbar:
+                                with tqdm(total=len(segments), desc="Testing", unit="question", ascii=False, ncols=80) as pbar:
                                     for index, segment in enumerate(segments):
                                         query = segment["question"]
                                         answer = segment["answer"]
@@ -922,10 +988,14 @@ def main_page(hps,role_hps):
                                         similarities_unused.append(similarity_unused)
 
                                         question_numbers.append(index)
-                                        save_dict = {"问题": query, "正确答案": answer, "回答(used)": bot_response,
-                                                     "相似度(used)": similarity_used,
-                                                     "回答(unused)": bot_response_without_reference,
-                                                     "相似度(unused)": similarity_unused}
+                                        save_dict = {
+                                            "question": query,
+                                            "answer": answer,
+                                            "reply_used": bot_response,
+                                            "similarity_used": similarity_used,
+                                            "reply_unused": bot_response_without_reference,
+                                            "similarity_unused": similarity_unused,
+                                        }
                                         save_json.append(save_dict)
                                         pbar.update(1)
                                         progress = (index + 1) / len(segments)
@@ -934,10 +1004,8 @@ def main_page(hps,role_hps):
                                 with open('template/json/save_log.json', 'w', encoding='utf-8') as f:
                                     f.write(save_json_string)
                                 plt.figure(figsize=(10, 5))
-                                plt.plot(question_numbers, similarities_used, 'go-',
-                                         label='With Reference')  # 绿色点表示similarity_used
-                                plt.plot(question_numbers, similarities_unused, 'ro-',
-                                         label='Without Reference')  # 红色点表示similarity_unused
+                                plt.plot(question_numbers, similarities_used, 'go-', label='With Reference')
+                                plt.plot(question_numbers, similarities_unused, 'ro-', label='Without Reference')
                                 plt.title('Answer Similarity')
                                 plt.xlabel('Question Number')
                                 plt.ylabel('Similarity')
@@ -945,20 +1013,28 @@ def main_page(hps,role_hps):
                                 plt.grid(True)
                                 st.pyplot(plt)
                                 plt.savefig("template/imgs/chart.png")
-                        if st.button("展示测试日志"):
+                        if st.button("Show test logs"):
                             st.image("template/imgs/chart.png")
                             with open('template/json/save_log.json', 'r', encoding='utf-8') as f:
                                 save_log = json.load(f)
-                            count = sum(1 for item in save_log if abs(item["相似度(used)"] - item["相似度(unused)"]) <= 5 or item["相似度(used)"] >= item["相似度(unused)"])
-                            st.write(f"相似度(used)更优或差距在5分以内的比例为: {(count/len(save_log))*100}%")
+                            count = sum(
+                                1
+                                for item in save_log
+                                if abs(item["similarity_used"] - item["similarity_unused"]) <= 5
+                                or item["similarity_used"] >= item["similarity_unused"]
+                            )
+                            st.write(
+                                "Share of cases where similarity_used is higher or within 5 points: "
+                                f"{(count/len(save_log))*100}%"
+                            )
                             st.write(save_log)
 
-            elif y_please == "neo4j数据库操作台(需要启动neo4j数据库)":
-                p = st.text_input("【用户认证】请输入以下内容:", placeholder="清空图数据库")
+            elif y_please == "Neo4j Console (requires Neo4j)":
+                p = st.text_input("[Auth] Type the phrase below:", placeholder="CLEAR_GRAPH_DB")
                 neo4j_url = hps.api_path.neo4j.url
                 url, port = utils.extract_port_and_url(neo4j_url)
-                if st.button("清空图数据库（请先关闭neo4j服务）"):
-                    if not utils.check_port(url, port) and (p=="清空图数据库"):
+                if st.button("Clear graph database (stop Neo4j first)"):
+                    if not utils.check_port(url, port) and (p == "CLEAR_GRAPH_DB"):
                         import shutil
                         try:
                             shutil.rmtree("tools/neo4j-chs-community-4.2.2-windows/data/databases/neo4j")
@@ -968,125 +1044,131 @@ def main_page(hps,role_hps):
                             print(f"Folder 'tools/neo4j-chs-community-4.2.2-windows/data/transactions/neo4j' does not exist.")
                         except Exception as e:
                             print(f"An error occurred while deleting : {e}")
-                        st.success("图数据库已清空")
+                        st.success("Graph database cleared.")
                     else:
-                        st.error("请先关闭neo4j服务")
+                        st.error("Stop Neo4j first.")
                 if utils.check_port(url, port):
                     from func.Neo4j_Database import to_neo4j
                     neo_db = to_neo4j.Neo4jHandler("configs/json/config.json")
                     neo_db.connect_neo4j_database()
-                    if st.button('打开Neo4j浏览器'):
-                        st.write(f'[打开Neo4j浏览器](http://localhost:7474/browser/)')
-                    please = st.selectbox("请选择功能:",["增添节点","设置关系","查询节点","查询关联节点","修改节点","删除节点"],index=0)
-                    if please == "增添节点":
-                        input_node_name = st.text_input("输入节点名称:","")
-                        input_node_properties_name = st.text_input("输入节点属性名称:")
-                        input_node_properties_value = st.text_input("输入节点属性值:")
+                    if st.button("Open Neo4j Browser"):
+                        st.write("[Open Neo4j Browser](http://localhost:7474/browser/)")
+                    please = st.selectbox(
+                        "Select action:",
+                        ["Add Node", "Set Relationship", "Query Node", "Query Related Nodes", "Update Node", "Delete Node"],
+                        index=0,
+                    )
+                    if please == "Add Node":
+                        input_node_name = st.text_input("Node name:", "")
+                        input_node_properties_name = st.text_input("Property name:")
+                        input_node_properties_value = st.text_input("Property value:")
                         node_properties = get_properties()
-                        if st.button("添加属性"):
+                        if st.button("Add property"):
                             if input_node_properties_name and input_node_properties_value:
                                 node_properties[input_node_properties_name] = input_node_properties_value
                                 save_properties_to_file(node_properties)
-                                st.success("属性添加成功！")
+                                st.success("Property added.")
                             else:
-                                st.error("请输入属性名称和值。")
+                                st.error("Enter both property name and value.")
 
-                        selected_properties = st.multiselect("选择要操作的属性:", list(node_properties.keys()),
+                        selected_properties = st.multiselect("Select properties to edit:", list(node_properties.keys()),
                                                              default=list(node_properties.keys()))
-                        if st.button("删除属性"):
+                        if st.button("Delete property"):
                             for property_name in selected_properties:
                                 del node_properties[property_name]
                             save_properties_to_file(node_properties)
-                            st.success("属性删除成功！")
-                        st.write("当前属性：", get_properties())
-                        if st.button("添加节点"):
+                            st.success("Property deleted.")
+                        st.write("Current properties:", get_properties())
+                        if st.button("Add node"):
                             node_properties = get_properties()
                             neo_db.add_node(input_node_name,node_properties)
-                            st.success("节点创建完毕")
-                    elif please == "设置关系":
-                        node1_name = st.text_input("输入节点1名称:","")
+                            st.success("Node created.")
+                    elif please == "Set Relationship":
+                        node1_name = st.text_input("Node 1 name:", "")
                         node1_list = neo_db.search_node(node1_name) if node1_name else []
-                        node2_name = st.text_input("输入节点2名称:","")
+                        node2_name = st.text_input("Node 2 name:", "")
                         node2_list = neo_db.search_node(node2_name) if node2_name else []
-                        nodes1 = st.selectbox("请选择节点1:", json.loads(json.dumps(node1_list)), index=0)
-                        nodes2 = st.selectbox("请选择节点2:", json.loads(json.dumps(node2_list)), index=0)
-                        relationship_name = st.text_input("输入关系名称:","")
-                        relationship_properties = st.text_input("输入关系属性","")
+                        nodes1 = st.selectbox("Select node 1:", json.loads(json.dumps(node1_list)), index=0)
+                        nodes2 = st.selectbox("Select node 2:", json.loads(json.dumps(node2_list)), index=0)
+                        relationship_name = st.text_input("Relationship name:", "")
+                        relationship_properties = st.text_input("Relationship properties", "")
                         if not relationship_properties: relationship_properties = "{}"
-                        if st.button("创建关系（节点1-->节点2）"):
+                        if st.button("Create relationship (node1 -> node2)"):
                             nodes1 = neo_db.search_node(node1_name,nodes1["node"])
                             nodes2 = neo_db.search_node(node2_name,nodes2["node"])
                             neo_db.set_relationship(nodes1[0]["node"], nodes2[0]["node"], relationship_name, properties=json.loads(relationship_properties))
-                            st.success("关系创建完毕")
-                    elif please == "查询节点":
-                        query_type = st.selectbox("请选择查询方式:",["按名称选择","按名称、属性查询"],index=0)
-                        input_node_name = st.text_input("输入节点名称:", "")
-                        if query_type == "按名称选择":
+                            st.success("Relationship created.")
+                    elif please == "Query Node":
+                        query_type = st.selectbox("Select query type:", ["By name", "By name + property"], index=0)
+                        input_node_name = st.text_input("Node name:", "")
+                        if query_type == "By name":
                             nodes = neo_db.search_node(input_node_name) if input_node_name else None
                             nodes_list = to_neo4j.nodes_to_json(nodes) if nodes else []
-                            select_node = st.selectbox("请选择节点",nodes_list,index=0)
-                            if st.button("查询"):
+                            select_node = st.selectbox("Select node", nodes_list, index=0)
+                            if st.button("Query"):
                                 print(select_node)
                                 query_node = to_neo4j.json_to_nodes(input_node_name,[select_node],config_path="configs/json/config.json")
                                 st.write(query_node)
-                        elif query_type == "按名称、属性查询":
-                            input_node_properties_name = st.text_input("输入节点属性名称:")
-                            input_node_properties_value = st.text_input("输入节点属性值:")
+                        elif query_type == "By name + property":
+                            input_node_properties_name = st.text_input("Property name:")
+                            input_node_properties_value = st.text_input("Property value:")
                             node_properties = get_properties()
-                            if st.button("添加属性"):
+                            if st.button("Add property"):
                                 if input_node_properties_name and input_node_properties_value:
                                     node_properties[input_node_properties_name] = input_node_properties_value
                                     save_properties_to_file(node_properties)
 
-                                    st.success("属性添加成功！")
+                                    st.success("Property added.")
                                 else:
-                                    st.error("请输入属性名称和值。")
-                            selected_properties = st.multiselect("选择要操作的属性:", list(node_properties.keys()),
+                                    st.error("Enter both property name and value.")
+                            selected_properties = st.multiselect(
+                                "Select properties to edit:",
+                                list(node_properties.keys()),
                                                                  default=list(node_properties.keys()))
-                            if st.button("删除属性"):
+                            if st.button("Delete property"):
                                 for property_name in selected_properties:
                                     del node_properties[property_name]
                                 save_properties_to_file(node_properties)
-                                st.success("属性删除成功！")
-                            if st.button("查询"):
+                                st.success("Property deleted.")
+                            if st.button("Query"):
                                 result = neo_db.search_node(input_node_name, node_properties)
                                 st.write(result)
 
-                    elif please == "查询关联节点":
-                        input_node_name = st.text_input("输入节点名称:", "")
-                        input_node_relationship_type = st.text_input("输入关系类型:", "")
+                    elif please == "Query Related Nodes":
+                        input_node_name = st.text_input("Node name:", "")
+                        input_node_relationship_type = st.text_input("Relationship type:", "")
                         nodes = neo_db.search_node(input_node_name) if input_node_name else None
                         nodes_list = to_neo4j.nodes_to_json(nodes) if nodes else []
-                        select_node = st.selectbox("请选择节点", nodes_list, index=0)
-                        if st.button("查询关联节点"):
+                        select_node = st.selectbox("Select node", nodes_list, index=0)
+                        if st.button("Query related nodes"):
                             query_node = to_neo4j.json_to_nodes(input_node_name, [select_node],
                                                                 config_path="configs/json/config.json")
                             result = neo_db.find_related_nodes(query_node[0]["node"], input_node_relationship_type)
                             st.write(result)
 
 
-                    elif please == "删除节点":
-                        node_name = st.text_input("输入待删除的节点名称:", "")
+                    elif please == "Delete Node":
+                        node_name = st.text_input("Node name to delete:", "")
                         node_list = neo_db.search_node(node_name) if node_name else []
-                        del_node = st.selectbox("请选择待删除的节点:", json.loads(json.dumps(node_list)), index=0)
-                        if st.button("删除节点"):
+                        del_node = st.selectbox("Select node to delete:", json.loads(json.dumps(node_list)), index=0)
+                        if st.button("Delete node"):
                             del_node = neo_db.search_node(node_name, del_node["node"])
                             st.write(del_node[0])
                             neo_db.delete_node(del_node[0]["node"])
-                            st.success("节点删除成功")
+                            st.success("Node deleted.")
             else:
-                input_keyword = st.text_input("输入关键词名称:", "")
+                input_keyword = st.text_input("Keyword:", "")
                 st.write(input_keyword)
 
-        elif choose == "功能定制":
-            t1 = st.checkbox("so-vits-svc音色模型定制")
+        elif choose == "Features":
+            t1 = st.checkbox("Customize so-vits-svc voice model")
             if t1:
                 command = f"{project_root}\\runtime\\miniconda3\\envs\\ai-vtuber\\python.exe -m streamlit run UI/to_sovits_ui.py"
                 subprocess.Popen(['start', 'cmd', '/k', command], shell=True)
 
 
 def main():
-    # 初始化
+    # Initialization
     folder_path_list = ['template/img','template/tts','template/txt','template/downloads','template/json','template/uploads','template/uvr5_opt']
     for folder_path in folder_path_list:
         if not os.path.exists(folder_path):
